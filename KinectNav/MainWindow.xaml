@@ -3,10 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:h="clr-namespace:HelixToolkit.Wpf;assembly=HelixToolkit.Wpf"
         xmlns:local="clr-namespace:KinectNav"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="900" Width="1500" Loaded="Window_Loaded" Closed="Window_Closed">
     <Grid>
-        
+        <h:HelixViewport3D>
+            <h:HelixViewport3D.Camera>
+                <PerspectiveCamera Position="0,0,-1" LookDirection="0,0,5" UpDirection="0,1,0" NearPlaneDistance="0.01" FarPlaneDistance="1000" FieldOfView="57"/>
+            </h:HelixViewport3D.Camera>
+            <h:DefaultLights/>
+            <ModelVisual3D x:Name="MOD">
+            </ModelVisual3D>
+        </h:HelixViewport3D>
     </Grid>
 </Window>
