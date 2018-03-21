@@ -8,9 +8,18 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="900" Width="1500" Loaded="Window_Loaded" Closed="Window_Closed">
     <Grid>
+        <Menu Grid.Row="0" VerticalAlignment="Top">
+            <Menu.Background>
+                <SolidColorBrush Opacity="0.5" Color="WhiteSmoke" />
+            </Menu.Background>
+            <MenuItem Header="View">
+                <MenuItem Command="{Binding UpXCommand}" Header="Up Dir X" />
+            </MenuItem>
+        </Menu>
+
         <h:HelixViewport3D>
             <h:HelixViewport3D.Camera>
-                <PerspectiveCamera Position="0,0,-1" LookDirection="0,0,5" UpDirection="0,1,0" NearPlaneDistance="0.01" FarPlaneDistance="1000" FieldOfView="57"/>
+                <PerspectiveCamera Position="0,0,-1.2" LookDirection="0,0,5" UpDirection="0,1,0" NearPlaneDistance="0.01" FarPlaneDistance="1000" FieldOfView="57"/>
             </h:HelixViewport3D.Camera>
             <h:DefaultLights/>
             <ModelVisual3D x:Name="MOD">

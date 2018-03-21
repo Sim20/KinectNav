@@ -22,8 +22,11 @@ namespace KinectNav
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
     public partial class MainWindow : Window
     {
+        private const int mountHeight = 1; // m
+
         KinectSensor _sensor;
         MultiSourceFrameReader _reader;
         private CoordinateMapper coordinateMapper = null;
@@ -101,10 +104,22 @@ namespace KinectNav
 
                         var children = modelGroup.Children;
                         children.Clear();
+                        var mat = redMaterial;
+
+                        MeshGeometry3D geometryMesh = new MeshGeometry3D();
 
                         for (int i = 0; i < points.Count; i = i + 1)
                         {
-                            children.Add(new GeometryModel3D { Geometry = mesh, Transform = new TranslateTransform3D(points[i].X, points[i].Y, points[i].Z), Material = redMaterial, BackMaterial = insideMaterial });
+                            if (points[i].Y < - mountHeight + 0.2)
+                            {
+                                children.Add(new GeometryModel3D { Geometry = mesh, Transform = new TranslateTransform3D(points[i].X, points[i].Y, points[i].Z), Material = redMaterial, BackMaterial = insideMaterial });
+                            }
+                            else
+                            {
+                                //mat = blueMaterial;
+                            }
+
+                           // children.Add(new GeometryModel3D { Geometry = mesh, Transform = new TranslateTransform3D(points[i].X, points[i].Y, points[i].Z), Material = mat, BackMaterial = insideMaterial });
                         }
                         modelGroup.Children = children;
                         MOD.Content = modelGroup;
@@ -159,6 +174,71 @@ namespace KinectNav
 
             return BitmapSource.Create(width, height, 96, 96, format, null, pixelData, stride);
 
+        }
+
+        private void AddCubeToMesh(MeshGeometry3D mesh, Point3D center, double size)
+        {
+            if (mesh != null)
+            {
+                int offset = mesh.Positions.Count;
+
+                mesh.Positions.Add(new Point3D(center.X - size, center.Y + size, center.Z - size));
+                mesh.Positions.Add(new Point3D(center.X + size, center.Y + size, center.Z - size));
+                mesh.Positions.Add(new Point3D(center.X + size, center.Y + size, center.Z + size));
+                mesh.Positions.Add(new Point3D(center.X - size, center.Y + size, center.Z + size));
+                mesh.Positions.Add(new Point3D(center.X - size, center.Y - size, center.Z - size));
+                mesh.Positions.Add(new Point3D(center.X + size, center.Y - size, center.Z - size));
+                mesh.Positions.Add(new Point3D(center.X + size, center.Y - size, center.Z + size));
+                mesh.Positions.Add(new Point3D(center.X - size, center.Y - size, center.Z + size));
+
+                mesh.TriangleIndices.Add(offset + 3);
+                mesh.TriangleIndices.Add(offset + 2);
+                mesh.TriangleIndices.Add(offset + 6);
+
+                mesh.TriangleIndices.Add(offset + 3);
+                mesh.TriangleIndices.Add(offset + 6);
+                mesh.TriangleIndices.Add(offset + 7);
+
+                mesh.TriangleIndices.Add(offset + 2);
+                mesh.TriangleIndices.Add(offset + 1);
+                mesh.TriangleIndices.Add(offset + 5);
+
+                mesh.TriangleIndices.Add(offset + 2);
+                mesh.TriangleIndices.Add(offset + 5);
+                mesh.TriangleIndices.Add(offset + 6);
+
+                mesh.TriangleIndices.Add(offset + 1);
+                mesh.TriangleIndices.Add(offset + 0);
+                mesh.TriangleIndices.Add(offset + 4);
+
+                mesh.TriangleIndices.Add(offset + 1);
+                mesh.TriangleIndices.Add(offset + 4);
+                mesh.TriangleIndices.Add(offset + 5);
+
+                mesh.TriangleIndices.Add(offset + 0);
+                mesh.TriangleIndices.Add(offset + 3);
+                mesh.TriangleIndices.Add(offset + 7);
+
+                mesh.TriangleIndices.Add(offset + 0);
+                mesh.TriangleIndices.Add(offset + 7);
+                mesh.TriangleIndices.Add(offset + 4);
+
+                mesh.TriangleIndices.Add(offset + 7);
+                mesh.TriangleIndices.Add(offset + 6);
+                mesh.TriangleIndices.Add(offset + 5);
+
+                mesh.TriangleIndices.Add(offset + 7);
+                mesh.TriangleIndices.Add(offset + 5);
+                mesh.TriangleIndices.Add(offset + 4);
+
+                mesh.TriangleIndices.Add(offset + 2);
+                mesh.TriangleIndices.Add(offset + 3);
+                mesh.TriangleIndices.Add(offset + 0);
+
+                mesh.TriangleIndices.Add(offset + 2);
+                mesh.TriangleIndices.Add(offset + 0);
+                mesh.TriangleIndices.Add(offset + 1);
+            }
         }
     }
 }
