@@ -95,7 +95,6 @@ namespace KinectNav
                         var meshBuilder = new MeshBuilder(false, false);
 
                         meshBuilder.AddBox(new Rect3D(0, 0, 0, 0.005, 0.005, 0.005));
-                        var mesh = meshBuilder.ToMesh(true);
 
                         var greenMaterial = MaterialHelper.CreateMaterial(Colors.Green);
                         var redMaterial = MaterialHelper.CreateMaterial(Colors.Red);
@@ -112,7 +111,7 @@ namespace KinectNav
                         {
                             if (points[i].Y < - mountHeight + 0.2)
                             {
-                                children.Add(new GeometryModel3D { Geometry = mesh, Transform = new TranslateTransform3D(points[i].X, points[i].Y, points[i].Z), Material = redMaterial, BackMaterial = insideMaterial });
+                                meshBuilder.AddBox(new Rect3D(points[i].X, points[i].Y, points[i].Z, 0.005, 0.005, 0.005));
                             }
                             else
                             {
@@ -121,6 +120,8 @@ namespace KinectNav
 
                            // children.Add(new GeometryModel3D { Geometry = mesh, Transform = new TranslateTransform3D(points[i].X, points[i].Y, points[i].Z), Material = mat, BackMaterial = insideMaterial });
                         }
+
+                        children.Add(new GeometryModel3D { Geometry = meshBuilder.ToMesh(true), Material = redMaterial, BackMaterial = insideMaterial });
                         modelGroup.Children = children;
                         MOD.Content = modelGroup;
 
