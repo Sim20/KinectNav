@@ -4,9 +4,19 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:h="clr-namespace:HelixToolkit.Wpf;assembly=HelixToolkit.Wpf"
+        xmlns:hx="http://helix-toolkit.org/wpf/SharpDX"
         xmlns:local="clr-namespace:KinectNav"
         mc:Ignorable="d"
         Title="MainWindow" Height="900" Width="1500" Loaded="Window_Loaded" Closed="Window_Closed">
+    
+    <Window.DataContext>
+        <local:MainWindow />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <hx:RenderTechniqueConverter x:Key="RenderTechniqueConverter" />
+    </Window.Resources>
+
     <Grid>
         <Menu Grid.Row="0" VerticalAlignment="Top">
             <Menu.Background>
@@ -16,7 +26,7 @@
                 <MenuItem Command="{Binding UpXCommand}" Header="Up Dir X" />
             </MenuItem>
         </Menu>
-
+        <!--
         <h:HelixViewport3D>
             <h:HelixViewport3D.Camera>
                 <PerspectiveCamera Position="0,0,-1.2" LookDirection="0,0,5" UpDirection="0,1,0" NearPlaneDistance="0.01" FarPlaneDistance="1000" FieldOfView="57"/>
@@ -25,5 +35,43 @@
             <ModelVisual3D x:Name="MOD">
             </ModelVisual3D>
         </h:HelixViewport3D>
+        -->
+        <hx:Viewport3DX
+            x:Name="view1"
+            Title="{Binding Title}"
+            Grid.Row="0"
+            Grid.Column="0"
+            CoordinateSystemLabelForeground="White"
+            EffectsManager="{Binding EffectsManager}"
+            MSAA="Eight"
+            RenderTechnique="{Binding RenderTechnique}"
+            ShowCoordinateSystem="False"
+            SubTitle="{Binding SubTitle}"
+            TextBrush="Black"
+            UseDefaultGestures="False">
+            <hx:Viewport3DX.BindingGroup>
+                <BindingGroup/>
+            </hx:Viewport3DX.BindingGroup>
+            <hx:Viewport3DX.Camera>
+                <hx:PerspectiveCamera x:Name="cam" Position="0,0,-1.2" LookDirection="0,0,5" UpDirection="0,1,0" NearPlaneDistance="0.01" FarPlaneDistance="1000" FieldOfView="57"/>
+            </hx:Viewport3DX.Camera>
+            <hx:Viewport3DX.InputBindings>
+                <KeyBinding Key="B" Command="hx:ViewportCommands.BackView" />
+                <KeyBinding Key="F" Command="hx:ViewportCommands.FrontView" />
+                <KeyBinding Key="U" Command="hx:ViewportCommands.TopView" />
+                <KeyBinding Key="D" Command="hx:ViewportCommands.BottomView" />
+                <KeyBinding Key="L" Command="hx:ViewportCommands.LeftView" />
+                <KeyBinding Key="R" Command="hx:ViewportCommands.RightView" />
+                <KeyBinding Command="hx:ViewportCommands.ZoomExtents" Gesture="Control+E" />
+                <MouseBinding Command="hx:ViewportCommands.Rotate" Gesture="RightClick" />
+                <MouseBinding Command="hx:ViewportCommands.Zoom" Gesture="MiddleClick" />
+                <MouseBinding Command="hx:ViewportCommands.Pan" Gesture="LeftClick" />
+            </hx:Viewport3DX.InputBindings>
+            <hx:AmbientLight3D Color="{Binding AmbientLightColor}" />
+            <hx:DirectionalLight3D Direction="{Binding Camera.LookDirection}" Color="{Binding DirectionalLightColor}" />
+            <hx:MeshGeometryModel3D
+                 x:Name="model1"
+                />
+        </hx:Viewport3DX>
     </Grid>
 </Window>

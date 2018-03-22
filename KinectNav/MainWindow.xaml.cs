@@ -12,10 +12,16 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Color = System.Windows.Media.Color;
 
 using Microsoft.Kinect;
-using System.Windows.Media.Media3D;
+using Media3D = System.Windows.Media.Media3D;
+
 using HelixToolkit.Wpf;
+using HelixToolkit.Wpf.SharpDX;
+using HelixToolkit.Wpf.SharpDX.Core;
+using SharpDX;
+
 
 namespace KinectNav
 {
@@ -27,16 +33,21 @@ namespace KinectNav
     {
         private const int mountHeight = 1; // m
 
+        public Color DirectionalLightColor { get; private set; }
+
         KinectSensor _sensor;
         MultiSourceFrameReader _reader;
         private CoordinateMapper coordinateMapper = null;
-        private Point3DCollection points = new Point3DCollection();
+        private Media3D.Point3DCollection points = new Media3D.Point3DCollection();
 
         private bool frozen = false;
+        HelixToolkit.Wpf.SharpDX.MeshBuilder meshBuilder = new HelixToolkit.Wpf.SharpDX.MeshBuilder();
 
         public MainWindow()
         {
-            InitializeComponent();
+            //InitializeComponent();
+            DirectionalLightColor = Colors.White;
+            Title = "Simple Demo";
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -46,14 +57,14 @@ namespace KinectNav
             {
                 _sensor.Open();
                 _reader = _sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth | FrameSourceTypes.Infrared | FrameSourceTypes.Body);
-                _reader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived;       
+                _reader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived;
             }
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            if (_reader != null){ _reader.Dispose();}
-            if (_sensor != null){_sensor.Close();}
+            if (_reader != null) { _reader.Dispose(); }
+            if (_sensor != null) { _sensor.Close(); }
         }
 
         void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e)
@@ -77,56 +88,36 @@ namespace KinectNav
                     frame.CopyFrameDataToArray(depthData);
                     coordinateMapper = _sensor.CoordinateMapper;
                     coordinateMapper.MapDepthFrameToCameraSpace(depthData, camerapoints);
-                    points.Clear();
 
-                    foreach (CameraSpacePoint point in camerapoints)
-                    {
-                        int max = 50;
-                        if (point.X < max && point.X > -max && point.Y < max && point.Y > -max && point.X < max && point.Z > -max)
-                        {
-                            Point3D temp = new Point3D(point.X, point.Y, point.Z);
-                            points.Add(temp);
-                        }
-                    }
+                    points.Clear();
 
                     if (frozen == false)
                     {
-                        var modelGroup = new Model3DGroup();
-                        var meshBuilder = new MeshBuilder(false, false);
+                        foreach (CameraSpacePoint point in camerapoints)
+                        {
+                            int max = 50;
+                            if (point.X < max && point.X > -max && point.Y < max && point.Y > -max && point.X < max && point.Z > -max)
+                            {
+                                Media3D.Point3D temp = new Media3D.Point3D(point.X, point.Y, point.Z);
+                                points.Add(temp);
+                            }
+                        }
 
-                        meshBuilder.AddBox(new Rect3D(0, 0, 0, 0.005, 0.005, 0.005));
-                        var mesh = meshBuilder.ToMesh(true);
-
-                        var greenMaterial = MaterialHelper.CreateMaterial(Colors.Green);
-                        var redMaterial = MaterialHelper.CreateMaterial(Colors.Red);
-                        var blueMaterial = MaterialHelper.CreateMaterial(Colors.Blue);
-                        var insideMaterial = MaterialHelper.CreateMaterial(Colors.Yellow);
-
-                        var children = modelGroup.Children;
-                        children.Clear();
-                        var mat = redMaterial;
-
-                        MeshGeometry3D geometryMesh = new MeshGeometry3D();
+                        var meshBuilder = new HelixToolkit.Wpf.SharpDX.MeshBuilder();
 
                         for (int i = 0; i < points.Count; i = i + 1)
                         {
-                            if (points[i].Y < - mountHeight + 0.2)
-                            {
-                                children.Add(new GeometryModel3D { Geometry = mesh, Transform = new TranslateTransform3D(points[i].X, points[i].Y, points[i].Z), Material = redMaterial, BackMaterial = insideMaterial });
-                            }
-                            else
-                            {
-                                //mat = blueMaterial;
-                            }
-
-                           // children.Add(new GeometryModel3D { Geometry = mesh, Transform = new TranslateTransform3D(points[i].X, points[i].Y, points[i].Z), Material = mat, BackMaterial = insideMaterial });
+                            meshBuilder.AddBox(new Vector3((float)points[i].X, (float)points[i].Y, (float)points[i].Z), 0.01, 0.01, 0.01, HelixToolkit.Wpf.SharpDX.BoxFaces.All);
                         }
-                        modelGroup.Children = children;
-                        MOD.Content = modelGroup;
+                        model1.Material = PhongMaterials.Red;
 
+                        var meshGeometry = meshBuilder.ToMeshGeometry3D();
+                        meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
+                        model1.Geometry = meshGeometry;
+                        
                         frozen = true;
-                    }
 
+                    }
                 }
             }
 
@@ -176,69 +167,69 @@ namespace KinectNav
 
         }
 
-        private void AddCubeToMesh(MeshGeometry3D mesh, Point3D center, double size)
-        {
-            if (mesh != null)
-            {
-                int offset = mesh.Positions.Count;
+        //private void AddCubeToMesh(MeshGeometry3D mesh, Point3D center, double size)
+        //{
+        //    if (mesh != null)
+        //    {
+        //        int offset = mesh.Positions.Count;
 
-                mesh.Positions.Add(new Point3D(center.X - size, center.Y + size, center.Z - size));
-                mesh.Positions.Add(new Point3D(center.X + size, center.Y + size, center.Z - size));
-                mesh.Positions.Add(new Point3D(center.X + size, center.Y + size, center.Z + size));
-                mesh.Positions.Add(new Point3D(center.X - size, center.Y + size, center.Z + size));
-                mesh.Positions.Add(new Point3D(center.X - size, center.Y - size, center.Z - size));
-                mesh.Positions.Add(new Point3D(center.X + size, center.Y - size, center.Z - size));
-                mesh.Positions.Add(new Point3D(center.X + size, center.Y - size, center.Z + size));
-                mesh.Positions.Add(new Point3D(center.X - size, center.Y - size, center.Z + size));
+        //        mesh.Positions.Add(new Point3D(center.X - size, center.Y + size, center.Z - size));
+        //        mesh.Positions.Add(new Point3D(center.X + size, center.Y + size, center.Z - size));
+        //        mesh.Positions.Add(new Point3D(center.X + size, center.Y + size, center.Z + size));
+        //        mesh.Positions.Add(new Point3D(center.X - size, center.Y + size, center.Z + size));
+        //        mesh.Positions.Add(new Point3D(center.X - size, center.Y - size, center.Z - size));
+        //        mesh.Positions.Add(new Point3D(center.X + size, center.Y - size, center.Z - size));
+        //        mesh.Positions.Add(new Point3D(center.X + size, center.Y - size, center.Z + size));
+        //        mesh.Positions.Add(new Point3D(center.X - size, center.Y - size, center.Z + size));
 
-                mesh.TriangleIndices.Add(offset + 3);
-                mesh.TriangleIndices.Add(offset + 2);
-                mesh.TriangleIndices.Add(offset + 6);
+        //        mesh.TriangleIndices.Add(offset + 3);
+        //        mesh.TriangleIndices.Add(offset + 2);
+        //        mesh.TriangleIndices.Add(offset + 6);
 
-                mesh.TriangleIndices.Add(offset + 3);
-                mesh.TriangleIndices.Add(offset + 6);
-                mesh.TriangleIndices.Add(offset + 7);
+        //        mesh.TriangleIndices.Add(offset + 3);
+        //        mesh.TriangleIndices.Add(offset + 6);
+        //        mesh.TriangleIndices.Add(offset + 7);
 
-                mesh.TriangleIndices.Add(offset + 2);
-                mesh.TriangleIndices.Add(offset + 1);
-                mesh.TriangleIndices.Add(offset + 5);
+        //        mesh.TriangleIndices.Add(offset + 2);
+        //        mesh.TriangleIndices.Add(offset + 1);
+        //        mesh.TriangleIndices.Add(offset + 5);
 
-                mesh.TriangleIndices.Add(offset + 2);
-                mesh.TriangleIndices.Add(offset + 5);
-                mesh.TriangleIndices.Add(offset + 6);
+        //        mesh.TriangleIndices.Add(offset + 2);
+        //        mesh.TriangleIndices.Add(offset + 5);
+        //        mesh.TriangleIndices.Add(offset + 6);
 
-                mesh.TriangleIndices.Add(offset + 1);
-                mesh.TriangleIndices.Add(offset + 0);
-                mesh.TriangleIndices.Add(offset + 4);
+        //        mesh.TriangleIndices.Add(offset + 1);
+        //        mesh.TriangleIndices.Add(offset + 0);
+        //        mesh.TriangleIndices.Add(offset + 4);
 
-                mesh.TriangleIndices.Add(offset + 1);
-                mesh.TriangleIndices.Add(offset + 4);
-                mesh.TriangleIndices.Add(offset + 5);
+        //        mesh.TriangleIndices.Add(offset + 1);
+        //        mesh.TriangleIndices.Add(offset + 4);
+        //        mesh.TriangleIndices.Add(offset + 5);
 
-                mesh.TriangleIndices.Add(offset + 0);
-                mesh.TriangleIndices.Add(offset + 3);
-                mesh.TriangleIndices.Add(offset + 7);
+        //        mesh.TriangleIndices.Add(offset + 0);
+        //        mesh.TriangleIndices.Add(offset + 3);
+        //        mesh.TriangleIndices.Add(offset + 7);
 
-                mesh.TriangleIndices.Add(offset + 0);
-                mesh.TriangleIndices.Add(offset + 7);
-                mesh.TriangleIndices.Add(offset + 4);
+        //        mesh.TriangleIndices.Add(offset + 0);
+        //        mesh.TriangleIndices.Add(offset + 7);
+        //        mesh.TriangleIndices.Add(offset + 4);
 
-                mesh.TriangleIndices.Add(offset + 7);
-                mesh.TriangleIndices.Add(offset + 6);
-                mesh.TriangleIndices.Add(offset + 5);
+        //        mesh.TriangleIndices.Add(offset + 7);
+        //        mesh.TriangleIndices.Add(offset + 6);
+        //        mesh.TriangleIndices.Add(offset + 5);
 
-                mesh.TriangleIndices.Add(offset + 7);
-                mesh.TriangleIndices.Add(offset + 5);
-                mesh.TriangleIndices.Add(offset + 4);
+        //        mesh.TriangleIndices.Add(offset + 7);
+        //        mesh.TriangleIndices.Add(offset + 5);
+        //        mesh.TriangleIndices.Add(offset + 4);
 
-                mesh.TriangleIndices.Add(offset + 2);
-                mesh.TriangleIndices.Add(offset + 3);
-                mesh.TriangleIndices.Add(offset + 0);
+        //        mesh.TriangleIndices.Add(offset + 2);
+        //        mesh.TriangleIndices.Add(offset + 3);
+        //        mesh.TriangleIndices.Add(offset + 0);
 
-                mesh.TriangleIndices.Add(offset + 2);
-                mesh.TriangleIndices.Add(offset + 0);
-                mesh.TriangleIndices.Add(offset + 1);
-            }
-        }
+        //        mesh.TriangleIndices.Add(offset + 2);
+        //        mesh.TriangleIndices.Add(offset + 0);
+        //        mesh.TriangleIndices.Add(offset + 1);
+        //    }
+        //}
     }
 }
