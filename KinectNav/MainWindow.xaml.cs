@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Color = System.Windows.Media.Color;
+using Colors = System.Windows.Media.Colors;
 
 using Microsoft.Kinect;
 using Media3D = System.Windows.Media.Media3D;
@@ -21,6 +22,7 @@ using HelixToolkit.Wpf;
 using HelixToolkit.Wpf.SharpDX;
 using HelixToolkit.Wpf.SharpDX.Core;
 using SharpDX;
+using Color4 = SharpDX.Color4;
 
 
 namespace KinectNav
@@ -38,10 +40,13 @@ namespace KinectNav
         KinectSensor _sensor;
         MultiSourceFrameReader _reader;
         private CoordinateMapper coordinateMapper = null;
-        private Media3D.Point3DCollection points = new Media3D.Point3DCollection();
 
         private bool frozen = false;
-        HelixToolkit.Wpf.SharpDX.MeshBuilder meshBuilder = new HelixToolkit.Wpf.SharpDX.MeshBuilder();
+
+        MeshGeometry3D meshGeometry = new MeshGeometry3D();
+        private Media3D.Point3DCollection points = new Media3D.Point3DCollection();
+        private Media3D.Point3DCollection groundPoints = new Media3D.Point3DCollection();
+
 
         public MainWindow()
         {
@@ -91,32 +96,25 @@ namespace KinectNav
 
                     points.Clear();
 
-                    if (frozen == false)
+                    foreach (CameraSpacePoint point in camerapoints)
                     {
-                        foreach (CameraSpacePoint point in camerapoints)
+                        int max = 50;
+                        if (point.X < max && point.X > -max && point.Y < max && point.Y > -max && point.X < max && point.Z > -max)
                         {
-                            int max = 50;
-                            if (point.X < max && point.X > -max && point.Y < max && point.Y > -max && point.X < max && point.Z > -max)
+                            points.Add(new Media3D.Point3D(point.X, point.Y, point.Z));
+                            if (point.Y < -mountHeight + 0.4)
                             {
-                                Media3D.Point3D temp = new Media3D.Point3D(point.X, point.Y, point.Z);
-                                points.Add(temp);
+                                groundPoints.Add(new Media3D.Point3D(point.X, point.Y, point.Z));
                             }
                         }
+                    }
 
-                        var meshBuilder = new HelixToolkit.Wpf.SharpDX.MeshBuilder();
+                    Media3D.Point3DCollection validGroungPoints = new Media3D.Point3DCollection();
 
-                        for (int i = 0; i < points.Count; i = i + 1)
-                        {
-                            meshBuilder.AddBox(new Vector3((float)points[i].X, (float)points[i].Y, (float)points[i].Z), 0.01, 0.01, 0.01, HelixToolkit.Wpf.SharpDX.BoxFaces.All);
-                        }
-                        model1.Material = PhongMaterials.Red;
-
-                        var meshGeometry = meshBuilder.ToMeshGeometry3D();
-                        meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
-                        model1.Geometry = meshGeometry;
-                        
+                    if (frozen == false)
+                    {
+                        drawPoints(groundPoints);
                         frozen = true;
-
                     }
                 }
             }
@@ -131,6 +129,21 @@ namespace KinectNav
                 }
             }
             */
+        }
+
+        private void drawPoints(Media3D.Point3DCollection points)
+        {
+
+            HelixToolkit.Wpf.SharpDX.MeshBuilder meshBuilder = new HelixToolkit.Wpf.SharpDX.MeshBuilder();
+
+            for (int i = 0; i < points.Count; i = i + 1)
+            {
+                meshBuilder.AddBox(new Vector3((float)points[i].X, (float)points[i].Y, (float)points[i].Z), 0.01, 0.01, 0.01, HelixToolkit.Wpf.SharpDX.BoxFaces.All);
+            }
+            meshGeometry = meshBuilder.ToMeshGeometry3D();
+            meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
+            model1.Geometry = meshGeometry;
+            model1.Material = PhongMaterials.White;
         }
 
         private ImageSource ToBitmap(DepthFrame frame)
@@ -166,70 +179,5 @@ namespace KinectNav
             return BitmapSource.Create(width, height, 96, 96, format, null, pixelData, stride);
 
         }
-
-        //private void AddCubeToMesh(MeshGeometry3D mesh, Point3D center, double size)
-        //{
-        //    if (mesh != null)
-        //    {
-        //        int offset = mesh.Positions.Count;
-
-        //        mesh.Positions.Add(new Point3D(center.X - size, center.Y + size, center.Z - size));
-        //        mesh.Positions.Add(new Point3D(center.X + size, center.Y + size, center.Z - size));
-        //        mesh.Positions.Add(new Point3D(center.X + size, center.Y + size, center.Z + size));
-        //        mesh.Positions.Add(new Point3D(center.X - size, center.Y + size, center.Z + size));
-        //        mesh.Positions.Add(new Point3D(center.X - size, center.Y - size, center.Z - size));
-        //        mesh.Positions.Add(new Point3D(center.X + size, center.Y - size, center.Z - size));
-        //        mesh.Positions.Add(new Point3D(center.X + size, center.Y - size, center.Z + size));
-        //        mesh.Positions.Add(new Point3D(center.X - size, center.Y - size, center.Z + size));
-
-        //        mesh.TriangleIndices.Add(offset + 3);
-        //        mesh.TriangleIndices.Add(offset + 2);
-        //        mesh.TriangleIndices.Add(offset + 6);
-
-        //        mesh.TriangleIndices.Add(offset + 3);
-        //        mesh.TriangleIndices.Add(offset + 6);
-        //        mesh.TriangleIndices.Add(offset + 7);
-
-        //        mesh.TriangleIndices.Add(offset + 2);
-        //        mesh.TriangleIndices.Add(offset + 1);
-        //        mesh.TriangleIndices.Add(offset + 5);
-
-        //        mesh.TriangleIndices.Add(offset + 2);
-        //        mesh.TriangleIndices.Add(offset + 5);
-        //        mesh.TriangleIndices.Add(offset + 6);
-
-        //        mesh.TriangleIndices.Add(offset + 1);
-        //        mesh.TriangleIndices.Add(offset + 0);
-        //        mesh.TriangleIndices.Add(offset + 4);
-
-        //        mesh.TriangleIndices.Add(offset + 1);
-        //        mesh.TriangleIndices.Add(offset + 4);
-        //        mesh.TriangleIndices.Add(offset + 5);
-
-        //        mesh.TriangleIndices.Add(offset + 0);
-        //        mesh.TriangleIndices.Add(offset + 3);
-        //        mesh.TriangleIndices.Add(offset + 7);
-
-        //        mesh.TriangleIndices.Add(offset + 0);
-        //        mesh.TriangleIndices.Add(offset + 7);
-        //        mesh.TriangleIndices.Add(offset + 4);
-
-        //        mesh.TriangleIndices.Add(offset + 7);
-        //        mesh.TriangleIndices.Add(offset + 6);
-        //        mesh.TriangleIndices.Add(offset + 5);
-
-        //        mesh.TriangleIndices.Add(offset + 7);
-        //        mesh.TriangleIndices.Add(offset + 5);
-        //        mesh.TriangleIndices.Add(offset + 4);
-
-        //        mesh.TriangleIndices.Add(offset + 2);
-        //        mesh.TriangleIndices.Add(offset + 3);
-        //        mesh.TriangleIndices.Add(offset + 0);
-
-        //        mesh.TriangleIndices.Add(offset + 2);
-        //        mesh.TriangleIndices.Add(offset + 0);
-        //        mesh.TriangleIndices.Add(offset + 1);
-        //    }
-        //}
     }
 }
