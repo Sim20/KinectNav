@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Numerics = System.Numerics;
 using Color = System.Windows.Media.Color;
 using Colors = System.Windows.Media.Colors;
 
@@ -44,8 +45,10 @@ namespace KinectNav
         private bool frozen = false;
 
         MeshGeometry3D meshGeometry = new MeshGeometry3D();
-        private Media3D.Point3DCollection points = new Media3D.Point3DCollection();
-        private Media3D.Point3DCollection groundPoints = new Media3D.Point3DCollection();
+        //private Media3D.Point3DCollection points = new Media3D.Point3DCollection();
+
+        Dictionary<int, Media3D.Point3D> points = new Dictionary<int, Media3D.Point3D>();
+        Dictionary<int, Media3D.Point3D> groundPoints = new Dictionary<int, Media3D.Point3D>();
 
 
         public MainWindow()
@@ -95,25 +98,85 @@ namespace KinectNav
                     coordinateMapper.MapDepthFrameToCameraSpace(depthData, camerapoints);
 
                     points.Clear();
-
-                    foreach (CameraSpacePoint point in camerapoints)
+                    groundPoints.Clear();
+                    
+                    int max = 5;
+                    for (int i = 0; i < camerapoints.Length; i++)
                     {
-                        int max = 50;
+                        var point = camerapoints[i];
+
                         if (point.X < max && point.X > -max && point.Y < max && point.Y > -max && point.X < max && point.Z > -max)
                         {
-                            points.Add(new Media3D.Point3D(point.X, point.Y, point.Z));
-                            if (point.Y < -mountHeight + 0.4)
+                            points.Add(i, new Media3D.Point3D(point.X, point.Y, point.Z));
+
+                            if (point.Y < -mountHeight + 0.2)
                             {
-                                groundPoints.Add(new Media3D.Point3D(point.X, point.Y, point.Z));
+                                groundPoints.Add(i, new Media3D.Point3D(point.X, point.Y, point.Z));
                             }
                         }
                     }
 
-                    Media3D.Point3DCollection validGroungPoints = new Media3D.Point3DCollection();
-
                     if (frozen == false)
                     {
-                        drawPoints(groundPoints);
+                        //RANSAC
+                        //num - the minimum number of points. For line fitting problem, num=2
+                        //iter number of iterations
+                        int iter = 100;
+                        //threshDist threshold used to id a point that fits well
+                        double threshDist = 0.04;
+                        //d number of nearby points required
+
+                        int iterations = 0;
+                        int bestCount = 0;
+
+                        Dictionary<int, Media3D.Point3D> bestSupport = new Dictionary<int, Media3D.Point3D>();
+
+                        Plane bestPlane = new Plane();
+                        Random rnd = new Random();
+
+                        while (iterations < iter)
+                        {
+                            Media3D.Point3D p = groundPoints.ElementAt(rnd.Next(0, groundPoints.Count())).Value;
+                            Vector3 point1 = new Vector3((float)p.X, (float)p.Y, (float)p.Z);
+
+                            p = groundPoints.ElementAt(rnd.Next(0, groundPoints.Count())).Value;
+                            Vector3 point2 = new Vector3((float)p.X, (float)p.Y, (float)p.Z);
+
+                            p = groundPoints.ElementAt(rnd.Next(0, groundPoints.Count())).Value;
+                            Vector3 point3 = new Vector3((float)p.X, (float)p.Y, (float)p.Z);
+
+                            // PTS TO PLANE
+                            Plane plane = new Plane(point1, point2, point3);
+
+                            Dictionary<int, Media3D.Point3D> pts = new Dictionary<int, Media3D.Point3D>();
+                            pts.Clear();
+
+                            foreach (var point in groundPoints)
+                            {
+                                if (Math.Abs(ComputeDistance(point.Value, plane)) < threshDist)
+                                {
+                                    pts.Add(point.Key, point.Value);
+                                }
+                            }
+
+                            if (pts.Count() > bestCount)
+                            {
+                                bestSupport = pts;
+                                bestPlane = plane;
+                                bestCount = pts.Count();
+                            }
+                            iterations++;
+                        }
+
+                        foreach (var point in bestSupport)
+                        {
+                            points.Remove(point.Key);
+                        }
+
+                        bestPlane.Normalize();
+                        //grid.Geometry = LineBuilder.GenerateGrid(new Vector3(0, 1, 0), -5, 5, -5, 5);
+                        drawPoints(points);
+
                         frozen = true;
                     }
                 }
@@ -131,15 +194,24 @@ namespace KinectNav
             */
         }
 
-        private void drawPoints(Media3D.Point3DCollection points)
+        private float ComputeDistance(Media3D.Point3D point, Plane plane)
+        {
+            Vector3 vector = new Vector3((float)point.X, (float)point.Y, (float)point.Z);
+
+            float dot = Vector3.Dot(plane.Normal, vector);
+            float value = dot + plane.D;
+            return value;
+        }
+
+        private void drawPoints(Dictionary<int, Media3D.Point3D> points)
         {
 
             HelixToolkit.Wpf.SharpDX.MeshBuilder meshBuilder = new HelixToolkit.Wpf.SharpDX.MeshBuilder();
-
-            for (int i = 0; i < points.Count; i = i + 1)
+            foreach (var point in points)
             {
-                meshBuilder.AddBox(new Vector3((float)points[i].X, (float)points[i].Y, (float)points[i].Z), 0.01, 0.01, 0.01, HelixToolkit.Wpf.SharpDX.BoxFaces.All);
+                meshBuilder.AddBox(new Vector3((float)point.Value.X, (float)point.Value.Y, (float)point.Value.Z), 0.005, 0.005, 0.005, HelixToolkit.Wpf.SharpDX.BoxFaces.All);
             }
+
             meshGeometry = meshBuilder.ToMeshGeometry3D();
             meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
             model1.Geometry = meshGeometry;
