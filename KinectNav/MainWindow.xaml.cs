@@ -1,29 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Numerics = System.Numerics;
 using Color = System.Windows.Media.Color;
 using Colors = System.Windows.Media.Colors;
 
 using Microsoft.Kinect;
 using Media3D = System.Windows.Media.Media3D;
 
-using HelixToolkit.Wpf;
+using System.Threading;
 using HelixToolkit.Wpf.SharpDX;
 using HelixToolkit.Wpf.SharpDX.Core;
 using SharpDX;
-using Color4 = SharpDX.Color4;
 
 
 namespace KinectNav
@@ -34,6 +24,7 @@ namespace KinectNav
     /// 
     public partial class MainWindow : Window
     {
+        int count = 0;
         private const int mountHeight = 1; // m
 
         public Color DirectionalLightColor { get; private set; }
@@ -50,6 +41,9 @@ namespace KinectNav
         Dictionary<int, Media3D.Point3D> points = new Dictionary<int, Media3D.Point3D>();
         Dictionary<int, Media3D.Point3D> groundPoints = new Dictionary<int, Media3D.Point3D>();
 
+        //Thread frameArrived = new Thread(new ParameterizedThreadStart(Reader_MultiSourceFrameArrived));
+
+        
 
         public MainWindow()
         {
@@ -60,11 +54,19 @@ namespace KinectNav
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            Thread kinectThread = new Thread(kinect);
+            kinectThread.Start();
+
+        }
+
+        private void kinect()
+        {
             _sensor = KinectSensor.GetDefault();
             if (_sensor != null)
             {
                 _sensor.Open();
-                _reader = _sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth | FrameSourceTypes.Infrared | FrameSourceTypes.Body);
+                //_reader = _sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth | FrameSourceTypes.Infrared | FrameSourceTypes.Body);
+                _reader = _sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Depth | FrameSourceTypes.Body);
                 _reader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived;
             }
         }
@@ -77,6 +79,7 @@ namespace KinectNav
 
         void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e)
         {
+
             // Get a reference to the multi-frame
             var reference = e.FrameReference.AcquireFrame();
 
@@ -123,13 +126,14 @@ namespace KinectNav
                         //iter number of iterations
                         int iter = 100;
                         //threshDist threshold used to id a point that fits well
-                        double threshDist = 0.04;
+                        double threshDist = 0.1;
                         //d number of nearby points required
 
                         int iterations = 0;
                         int bestCount = 0;
 
                         Dictionary<int, Media3D.Point3D> bestSupport = new Dictionary<int, Media3D.Point3D>();
+                       
 
                         Plane bestPlane = new Plane();
                         Random rnd = new Random();
@@ -145,11 +149,9 @@ namespace KinectNav
                             p = groundPoints.ElementAt(rnd.Next(0, groundPoints.Count())).Value;
                             Vector3 point3 = new Vector3((float)p.X, (float)p.Y, (float)p.Z);
 
-                            // PTS TO PLANE
                             Plane plane = new Plane(point1, point2, point3);
 
                             Dictionary<int, Media3D.Point3D> pts = new Dictionary<int, Media3D.Point3D>();
-                            pts.Clear();
 
                             foreach (var point in groundPoints)
                             {
@@ -165,6 +167,7 @@ namespace KinectNav
                                 bestPlane = plane;
                                 bestCount = pts.Count();
                             }
+
                             iterations++;
                         }
 
@@ -174,10 +177,12 @@ namespace KinectNav
                         }
 
                         bestPlane.Normalize();
-                        //grid.Geometry = LineBuilder.GenerateGrid(new Vector3(0, 1, 0), -5, 5, -5, 5);
+                        //grid.Geometry = LineBuilder.GenerateGrid(new Vector3(0, 1, 0), -2, 2, -2, 5);
+                        //grid.Transform = new Media3D.TranslateTransform3D(0, -bestPlane.Normal.Y, 0);
+
                         drawPoints(points);
 
-                        frozen = true;
+                        //frozen = true;
                     }
                 }
             }
@@ -198,15 +203,13 @@ namespace KinectNav
         {
             Vector3 vector = new Vector3((float)point.X, (float)point.Y, (float)point.Z);
 
-            float dot = Vector3.Dot(plane.Normal, vector);
-            float value = dot + plane.D;
-            return value;
+            return Vector3.Dot(plane.Normal, vector) + plane.D;
         }
 
         private void drawPoints(Dictionary<int, Media3D.Point3D> points)
         {
-
             HelixToolkit.Wpf.SharpDX.MeshBuilder meshBuilder = new HelixToolkit.Wpf.SharpDX.MeshBuilder();
+
             foreach (var point in points)
             {
                 meshBuilder.AddBox(new Vector3((float)point.Value.X, (float)point.Value.Y, (float)point.Value.Z), 0.005, 0.005, 0.005, HelixToolkit.Wpf.SharpDX.BoxFaces.All);
@@ -214,8 +217,9 @@ namespace KinectNav
 
             meshGeometry = meshBuilder.ToMeshGeometry3D();
             meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
-            model1.Geometry = meshGeometry;
-            model1.Material = PhongMaterials.White;
+
+            Dispatcher.Invoke(() => { model1.Geometry = meshGeometry; });
+            Dispatcher.Invoke(() => { model1.Material = PhongMaterials.White; });
         }
 
         private ImageSource ToBitmap(DepthFrame frame)
