@@ -37,7 +37,9 @@
                 <SolidColorBrush Opacity="0.5" Color="WhiteSmoke" />
             </Menu.Background>
             <MenuItem Header="View">
-                <MenuItem Command="{Binding UpXCommand}" Header="Up Dir X" />
+                <MenuItem x:Name="header_rawDepth" Header="Raw depth" Click="header_rawDepth_Click" />
+                <MenuItem x:Name="header_collisionOoints" Header="Collision points" Click="header_collisionOoints_Click" />
+                <MenuItem x:Name="header_showNone" Header="Freeze" Click="header_showNone_Click" />
             </MenuItem>
         </Menu>
 
@@ -79,7 +81,7 @@
             <hx:AmbientLight3D Color="{Binding AmbientLightColor}" />
 
             <hx:DirectionalLight3D x:Name="light1"/>
-            
+
             <hx:MeshGeometryModel3D
                  x:Name="model1"
                 />
@@ -110,7 +112,7 @@
             <hx:AmbientLight3D Color="{Binding AmbientLightColor}" />
 
             <hx:DirectionalLight3D x:Name="light2" Direction="0,-1,0"/>
-            
+
             <hx:MeshGeometryModel3D
                  x:Name="mapModelRed"
                 />
@@ -119,12 +121,6 @@
                 />
 
         </hx:Viewport3DX>
-            
-        
-            
-        <Button x:Name="btn_showRawDepth" Grid.Column="0" Grid.Row="0" Content="Raw depth data" Height="40" VerticalAlignment="Top" Click="btn_showRawDepth_Click" />
-        <Button x:Name="btn_obstPoints" Content="Colision points" Grid.Column="1" Grid.Row="0" Click="btn_obstPoints_Click"/>
-        <Button x:Name="btn_map" Content="Map" Grid.Column="2" Grid.Row="0" Click="btn_map_Click" />
 
     </Grid>
 </Window>

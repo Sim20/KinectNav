@@ -27,7 +27,7 @@ namespace KinectNav
     /// 
     public partial class MainWindow : Window
     {
-        private string drawmode = "points";
+        private string drawmode = "None";
 
         private const float InferredZPositionClamp = 0.1f;
         private const float robotHeight = 1.5f;
@@ -452,9 +452,7 @@ namespace KinectNav
             }
 
             meshGeometryMapRed = meshBuilderRed.ToMeshGeometry3D();
-            meshGeometryMapRed.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
             meshGeometryMapGreen = meshBuilderGreen.ToMeshGeometry3D();
-            meshGeometryMapGreen.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
 
             Dispatcher.Invoke(() =>
             {
@@ -498,19 +496,21 @@ namespace KinectNav
 
         }
 
-        private void btn_showRawDepth_Click(object sender, RoutedEventArgs e)
+
+
+        private void header_rawDepth_Click(object sender, RoutedEventArgs e)
         {
             drawmode = "points";
         }
 
-        private void btn_obstPoints_Click(object sender, RoutedEventArgs e)
+        private void header_collisionOoints_Click(object sender, RoutedEventArgs e)
         {
             drawmode = "obstPoints";
         }
 
-        private void btn_map_Click(object sender, RoutedEventArgs e)
+        private void header_showNone_Click(object sender, RoutedEventArgs e)
         {
-            drawmode = "map";
+            drawmode = "none";
         }
     }
 }
