@@ -31,7 +31,15 @@ namespace KinectNav
 
         private const float InferredZPositionClamp = 0.1f;
         private const float robotHeight = 1.5f;
+
+        const int mapSizeX = 100;
+        const int mapSizeZ = 100;
+
+        const int mapZoom = 20;
+
         private bool updateFloor = true;
+
+
 
         Plane groundPlane = new Plane();
 
@@ -76,11 +84,11 @@ namespace KinectNav
             light1.Direction = new Vector3(0, 0, 5);
 
             //2D MAP
-            maptiles = new MapTile[100, 100];
+            maptiles = new MapTile[mapSizeX, mapSizeZ];
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < mapSizeX; i++)
             {
-                for (int k = 0; k < 100; k++)
+                for (int k = 0; k < mapSizeZ; k++)
                 {
                     maptiles[i, k] = new MapTile(i, k);
                 }
@@ -241,19 +249,14 @@ namespace KinectNav
 
             double yLimit = groundPlane.Normal.Y;
 
-            if (yLimit > 0)
+            foreach (var p in points)
             {
-                yLimit = -yLimit + 0.1;
-            }
-            else
-            {
-                yLimit = yLimit + 0.1;
-            }
+                double temp = groundPlane.Normal.X * p.Value.X + groundPlane.Normal.Y * p.Value.Y + groundPlane.Normal.Z * p.Value.Z + groundPlane.D + 0.1;
 
-
-            foreach (var point in points.Where(t => t.Value.Y > yLimit && t.Value.Y < robotHeight + yLimit).ToList())
-            {
-                obstPointsIndexes.Add(point.Key);
+                if (temp < 0 && temp + robotHeight > 0)
+                {
+                    obstPointsIndexes.Add(p.Key);
+                }
             }
 
             switch (drawmode)
@@ -270,7 +273,6 @@ namespace KinectNav
 
             Dispatcher.Invoke(() => { Title = watch.ElapsedMilliseconds.ToString(); });
         }
-
 
         private Plane updateGround()
         {
@@ -421,30 +423,31 @@ namespace KinectNav
             foreach (var index in p)
             {
                 Vector3 pos = new Vector3((float)points[index].X, (float)points[index].Y, (float)points[index].Z);
-                Vector2 tilepos = new Vector2(pos.X * 20 + 50, pos.Z*20);
 
-                if(tilepos.X >=0 && tilepos.X <100 && tilepos.Y >= 0 && tilepos.Y < 100)
+                Vector2 tilepos = new Vector2(Convert.ToInt32(pos.X * mapZoom + mapSizeX/2), Convert.ToInt32(pos.Z* mapZoom));
+
+                if (tilepos.X >= 0 && tilepos.X < mapSizeX && tilepos.Y >= 0 && tilepos.Y < mapSizeZ)
                 {
                     maptiles[(int)tilepos.X, (int)tilepos.Y].Color = "red";
                 }
-
             }
 
-            for (int x = 0; x < 100; x++)
+            for (int x = 0; x < mapSizeX; x++)
             {
-                for (int z = 0; z < 100; z++)
+                for (int z = 0; z < mapSizeZ; z++)
                 {
-                    if (x < z + 50 && x > -z + 50)
+                    if (x < z + mapSizeZ / 2 && x > -z + mapSizeZ/2 && z > 10)
                     {
+                        Vector3 vect = new Vector3((float)x / 10 - 5, -1, (float)z / 10 - 5);
+
                         if (maptiles[x, z].Color == "red")
                         {
-                            Vector3 vect = new Vector3((float)x / 10 - 5, -1, (float)z / 10 - 5);
-                            meshBuilderRed.AddBox(vect, 0.06, 0.06, 0.06, BoxFaces.All);
+                            
+                            meshBuilderRed.AddBox(vect, 0.08, 0.08, 0.08, BoxFaces.All);
                         }
                         else
                         {
-                            Vector3 vect = new Vector3((float)x / 10 - 5, -1, (float)z / 10 - 5);
-                            meshBuilderGreen.AddBox(vect, 0.06, 0.06, 0.06, BoxFaces.All);
+                            meshBuilderGreen.AddBox(vect, 0.08, 0.08, 0.08, BoxFaces.All);
                         }
                     }
                     
@@ -511,6 +514,11 @@ namespace KinectNav
         private void header_showNone_Click(object sender, RoutedEventArgs e)
         {
             drawmode = "none";
+        }
+
+        private void btn_UpdateGroundPlane_Click(object sender, RoutedEventArgs e)
+        {
+            updateFloor = true;
         }
     }
 }

@@ -121,6 +121,7 @@
                 />
 
         </hx:Viewport3DX>
+        <Button x:Name="btn_UpdateGroundPlane" Content="Update ground plane"  Grid.Row="0" Grid.Column="1" Click="btn_UpdateGroundPlane_Click" />
 
     </Grid>
 </Window>
