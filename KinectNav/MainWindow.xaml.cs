@@ -49,6 +49,8 @@ namespace KinectNav
         MapTile[,] maptiles;
 
         MeshGeometry3D meshGeometry = new MeshGeometry3D();
+        MeshGeometry3D meshGeometryMapGreen = new MeshGeometry3D();
+        MeshGeometry3D meshGeometryMapRed = new MeshGeometry3D();
 
         Dictionary<int, Media3D.Point3D> points = new Dictionary<int, Media3D.Point3D>(); // All depth points
 
@@ -67,6 +69,8 @@ namespace KinectNav
             Thread kinectThread = new Thread(kinectT);
             kinectThread.Start();
 
+            model1.Material = PhongMaterials.Red;
+
             //Light setup
             light1.Color = SharpDX.Color.White;
             light1.Direction = new Vector3(0, 0, 5);
@@ -81,6 +85,9 @@ namespace KinectNav
                     maptiles[i, k] = new MapTile(i, k);
                 }
             }
+
+            mapModelRed.Material = PhongMaterials.Red;
+            mapModelGreen.Material = PhongMaterials.Green;
         }
 
         private void kinectT()
@@ -395,7 +402,6 @@ namespace KinectNav
             Dispatcher.Invoke(() =>
             {
                 model1.Geometry = meshGeometry;
-                model1.Material = PhongMaterials.Red;
             });
         }
 
@@ -445,25 +451,16 @@ namespace KinectNav
                 }
             }
 
-            meshGeometry = meshBuilderRed.ToMeshGeometry3D();
-            meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
+            meshGeometryMapRed = meshBuilderRed.ToMeshGeometry3D();
+            meshGeometryMapRed.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
+            meshGeometryMapGreen = meshBuilderGreen.ToMeshGeometry3D();
+            meshGeometryMapGreen.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
 
             Dispatcher.Invoke(() =>
             {
-                mapModelRed.Geometry = meshGeometry;
-                mapModelRed.Material = PhongMaterials.Red;
+                mapModelRed.Geometry = meshGeometryMapRed;
+                mapModelGreen.Geometry = meshGeometryMapGreen;
             });
-
-            meshGeometry = meshBuilderGreen.ToMeshGeometry3D();
-            meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
-
-            Dispatcher.Invoke(() =>
-            {
-                mapModelGreen.Geometry = meshGeometry;
-                mapModelGreen.Material = PhongMaterials.Green;
-            });
-
-
         }
 
 
