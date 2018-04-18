@@ -51,8 +51,10 @@ namespace KinectNav
         MeshGeometry3D meshGeometry = new MeshGeometry3D();
 
         Dictionary<int, Media3D.Point3D> points = new Dictionary<int, Media3D.Point3D>(); // All depth points
-        Dictionary<int, Media3D.Point3D> groundPoints = new Dictionary<int, Media3D.Point3D>(); // Groundpoints
-        Dictionary<int, Media3D.Point3D> obstPoints = new Dictionary<int, Media3D.Point3D>(); // Obstacles
+
+        List<int> groundPointsIndexes = new List<int>();
+        List<int> obstPointsIndexes= new List<int>();
+        List<int> PointsIndexes = new List<int>();
 
         public MainWindow()
         {
@@ -201,7 +203,8 @@ namespace KinectNav
             coordinateMapper.MapDepthFrameToCameraSpace(depthData, camerapoints);
 
             points.Clear();
-            obstPoints.Clear();
+            PointsIndexes.Clear();
+            obstPointsIndexes.Clear();
 
             int max = 5;
 
@@ -212,6 +215,7 @@ namespace KinectNav
                 if (point.X < max && point.X > -max && point.Y < max && point.Y > -max && point.X < max && point.Z > -max)
                 {
                     points.Add(i, new Media3D.Point3D(point.X, point.Y, point.Z));
+                    PointsIndexes.Add(i);
                 }
 
                 i++;
@@ -242,20 +246,20 @@ namespace KinectNav
 
             foreach (var point in points.Where(t => t.Value.Y > yLimit && t.Value.Y < robotHeight + yLimit).ToList())
             {
-                obstPoints.Add(point.Key, point.Value);
+                obstPointsIndexes.Add(point.Key);
             }
 
             switch (drawmode)
             {
                 case "points":
-                    drawPoints(points);
+                    drawPoints(PointsIndexes);
                     break;
                 case "obstPoints":
-                    drawPoints(obstPoints);
+                    drawPoints(obstPointsIndexes);
                     break;
             }
 
-            drawMap(obstPoints);
+            drawMap(obstPointsIndexes);
 
             Dispatcher.Invoke(() => { Title = watch.ElapsedMilliseconds.ToString(); });
         }
@@ -275,39 +279,34 @@ namespace KinectNav
             Plane bestPlane = new Plane();
             Random rnd = new Random();
 
-            groundPoints.Clear();
-
-            int i = 0;
+            groundPointsIndexes.Clear();
 
             foreach (var point in points)
             {
                 if (point.Value.Y < 0)
                 {
-                    groundPoints.Add(i, new Media3D.Point3D(point.Value.X, point.Value.Y, point.Value.Z));
+                    groundPointsIndexes.Add(point.Key);
                 }
-
-                i++;
             }
 
             while (iterations < iter)
             {
-                Media3D.Point3D p = groundPoints.ElementAt(rnd.Next(0, groundPoints.Count())).Value;
+                Media3D.Point3D p = points[groundPointsIndexes.ElementAt(rnd.Next(0, groundPointsIndexes.Count()))];
                 Vector3 point1 = new Vector3((float)p.X, (float)p.Y, (float)p.Z);
 
-                p = groundPoints.ElementAt(rnd.Next(0, groundPoints.Count())).Value;
+                p = points[groundPointsIndexes.ElementAt(rnd.Next(0, groundPointsIndexes.Count()))];
                 Vector3 point2 = new Vector3((float)p.X, (float)p.Y, (float)p.Z);
 
-                p = groundPoints.ElementAt(rnd.Next(0, groundPoints.Count())).Value;
+                p = points[groundPointsIndexes.ElementAt(rnd.Next(0, groundPointsIndexes.Count()))];
                 Vector3 point3 = new Vector3((float)p.X, (float)p.Y, (float)p.Z);
 
                 Plane plane = new Plane(point1, point2, point3);
 
-                Dictionary<int, Media3D.Point3D> pts = new Dictionary<int, Media3D.Point3D>();
                 int count = 0;
 
-                foreach (var point in groundPoints)
+                foreach (var index in groundPointsIndexes)
                 {
-                    if (Math.Abs(ComputeDistance(point.Value, plane)) < threshDist)
+                    if (Math.Abs(ComputeDistance(points[index], plane)) < threshDist)
                     {
                         count++;
                     }
@@ -380,14 +379,15 @@ namespace KinectNav
             return Vector3.Dot(plane.Normal, vector) + plane.D;
         }
 
-        private void drawPoints(Dictionary<int, Media3D.Point3D> points)
+        private void drawPoints(List<int> p)
         {
             MeshBuilder meshBuilder = new MeshBuilder();
 
-            foreach (var point in points)
+            foreach (int index in p)
             {
-                meshBuilder.AddBox(new Vector3((float)point.Value.X, (float)point.Value.Y, (float)point.Value.Z), 0.005, 0.005, 0.005, BoxFaces.All);
+                meshBuilder.AddBox(new Vector3((float)points[index].X, (float)points[index].Y, (float)points[index].Z), 0.005, 0.005, 0.005, BoxFaces.All);
             }
+
 
             meshGeometry = meshBuilder.ToMeshGeometry3D();
             meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
@@ -399,7 +399,7 @@ namespace KinectNav
             });
         }
 
-        private void drawMap(Dictionary<int, Media3D.Point3D> points)
+        private void drawMap(List<int> p)
         {
             MeshBuilder meshBuilderRed = new MeshBuilder();
             MeshBuilder meshBuilderGreen = new MeshBuilder();
@@ -412,9 +412,9 @@ namespace KinectNav
                 }
             }
 
-            foreach (var point in points)
+            foreach (var index in p)
             {
-                Vector3 pos = new Vector3((float)point.Value.X, (float)point.Value.Y, (float)point.Value.Z);
+                Vector3 pos = new Vector3((float)points[index].X, (float)points[index].Y, (float)points[index].Z);
                 Vector2 tilepos = new Vector2(pos.X * 20 + 50, pos.Z*20);
 
                 if(tilepos.X >=0 && tilepos.X <100 && tilepos.Y >= 0 && tilepos.Y < 100)
