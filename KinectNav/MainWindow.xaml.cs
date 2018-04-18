@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Color = System.Windows.Media.Color;
 using Colors = System.Windows.Media.Colors;
+using System.Windows.Shapes;
 
 using Microsoft.Kinect;
 using Media3D = System.Windows.Media.Media3D;
@@ -25,9 +27,13 @@ namespace KinectNav
     /// 
     public partial class MainWindow : Window
     {
+        private string drawmode = "points";
+
         private const float InferredZPositionClamp = 0.1f;
-        private const int mountHeight = 1; // m
         private const float robotHeight = 1.5f;
+        private bool updateFloor = true;
+
+        Plane groundPlane = new Plane();
 
         public Color DirectionalLightColor { get; private set; }
 
@@ -39,11 +45,14 @@ namespace KinectNav
         private List<Tuple<JointType, JointType>> bones;
         private Body[] bodies = null;
 
-        MeshGeometry3D meshGeometry = new MeshGeometry3D();
-        //private Media3D.Point3DCollection points = new Media3D.Point3DCollection();
+        //2DMAP
+        MapTile[,] maptiles;
 
-        Dictionary<int, Media3D.Point3D> points = new Dictionary<int, Media3D.Point3D>();
-        Dictionary<int, Media3D.Point3D> groundPoints = new Dictionary<int, Media3D.Point3D>();
+        MeshGeometry3D meshGeometry = new MeshGeometry3D();
+
+        Dictionary<int, Media3D.Point3D> points = new Dictionary<int, Media3D.Point3D>(); // All depth points
+        Dictionary<int, Media3D.Point3D> groundPoints = new Dictionary<int, Media3D.Point3D>(); // Groundpoints
+        Dictionary<int, Media3D.Point3D> obstPoints = new Dictionary<int, Media3D.Point3D>(); // Obstacles
 
         public MainWindow()
         {
@@ -53,15 +62,26 @@ namespace KinectNav
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Thread kinectThread = new Thread(kinect);
+            Thread kinectThread = new Thread(kinectT);
             kinectThread.Start();
 
             //Light setup
             light1.Color = SharpDX.Color.White;
             light1.Direction = new Vector3(0, 0, 5);
+
+            //2D MAP
+            maptiles = new MapTile[100, 100];
+
+            for (int i = 0; i < 100; i++)
+            {
+                for (int k = 0; k < 100; k++)
+                {
+                    maptiles[i, k] = new MapTile(i, k);
+                }
+            }
         }
 
-        private void kinect()
+        private void kinectT()
         {
             _sensor = KinectSensor.GetDefault();
             if (_sensor != null)
@@ -153,8 +173,7 @@ namespace KinectNav
                 //camera.Source = ToBitmap(frame);
 
                 processDepthFrame(depthFrame);
-                //processBodyFrame(bodyFrame);
-
+                processBodyFrame(bodyFrame);
             }
 
             finally
@@ -182,7 +201,7 @@ namespace KinectNav
             coordinateMapper.MapDepthFrameToCameraSpace(depthData, camerapoints);
 
             points.Clear();
-            groundPoints.Clear();
+            obstPoints.Clear();
 
             int max = 5;
 
@@ -193,16 +212,57 @@ namespace KinectNav
                 if (point.X < max && point.X > -max && point.Y < max && point.Y > -max && point.X < max && point.Z > -max)
                 {
                     points.Add(i, new Media3D.Point3D(point.X, point.Y, point.Z));
-
-                    if (point.Y < -mountHeight + 0.2)
-                    {
-                        groundPoints.Add(i, new Media3D.Point3D(point.X, point.Y, point.Z));
-                    }
                 }
 
-                i++; // !!!! TEMP !!!!
+                i++;
+            }
+            Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+
+            if (updateFloor)
+            {
+                groundPlane = updateGround();
+                updateFloor = false;
             }
 
+            watch.Stop();
+
+            //delete points under ground and over robot height
+
+            double yLimit = groundPlane.Normal.Y;
+
+            if (yLimit > 0)
+            {
+                yLimit = -yLimit + 0.1;
+            }
+            else
+            {
+                yLimit = yLimit + 0.1;
+            }
+
+
+            foreach (var point in points.Where(t => t.Value.Y > yLimit && t.Value.Y < robotHeight + yLimit).ToList())
+            {
+                obstPoints.Add(point.Key, point.Value);
+            }
+
+            switch (drawmode)
+            {
+                case "points":
+                    drawPoints(points);
+                    break;
+                case "obstPoints":
+                    drawPoints(obstPoints);
+                    break;
+            }
+
+            drawMap(obstPoints);
+
+            Dispatcher.Invoke(() => { Title = watch.ElapsedMilliseconds.ToString(); });
+        }
+
+
+        private Plane updateGround()
+        {
             //RANSAC
             int iter = 100;
             double threshDist = 0.05;
@@ -214,6 +274,20 @@ namespace KinectNav
 
             Plane bestPlane = new Plane();
             Random rnd = new Random();
+
+            groundPoints.Clear();
+
+            int i = 0;
+
+            foreach (var point in points)
+            {
+                if (point.Value.Y < 0)
+                {
+                    groundPoints.Add(i, new Media3D.Point3D(point.Value.X, point.Value.Y, point.Value.Z));
+                }
+
+                i++;
+            }
 
             while (iterations < iter)
             {
@@ -248,31 +322,9 @@ namespace KinectNav
                 iterations++;
             }
 
-            //delete points under ground
-
-            double yLimit = bestPlane.Normal.Y;
-            if (yLimit > 0)
-            {
-                yLimit = -yLimit + 0.1;
-            }
-            else
-            {
-                yLimit = yLimit + 0.1;
-            }
-
-            foreach (var point in points.Where(t => t.Value.Y < yLimit || t.Value.Y > robotHeight + yLimit).ToList())
-            {
-                points.Remove(point.Key);
-            }
-
-            Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
-
-            drawPoints(points);
-
-            watch.Stop();
-
-            Dispatcher.Invoke(() => { Title = watch.ElapsedMilliseconds.ToString(); });
+            return bestPlane;
         }
+
 
         private void processBodyFrame(BodyFrame bodyFrame)
         {
@@ -284,7 +336,7 @@ namespace KinectNav
                 }
 
                 bodyFrame.GetAndRefreshBodyData(this.bodies);
- 
+
                 MeshBuilder meshBuilder = new MeshBuilder();
 
                 foreach (Body body in this.bodies)
@@ -307,7 +359,7 @@ namespace KinectNav
 
                             TrackingState trackingState = joints[joint].TrackingState;
 
-                            meshBuilder.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), 0.05, 0.05, 0.05, BoxFaces.All);
+                            meshBuilder.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), 0.05, 0.05, 0.05, BoxFaces.Top);
 
                         }
                     }
@@ -340,9 +392,80 @@ namespace KinectNav
             meshGeometry = meshBuilder.ToMeshGeometry3D();
             meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
 
-            Dispatcher.Invoke(() => { model1.Geometry = meshGeometry; });
-            Dispatcher.Invoke(() => { model1.Material = PhongMaterials.Red; });
+            Dispatcher.Invoke(() =>
+            {
+                model1.Geometry = meshGeometry;
+                model1.Material = PhongMaterials.Red;
+            });
         }
+
+        private void drawMap(Dictionary<int, Media3D.Point3D> points)
+        {
+            MeshBuilder meshBuilderRed = new MeshBuilder();
+            MeshBuilder meshBuilderGreen = new MeshBuilder();
+
+            for (int x = 0; x < maptiles.GetLength(0); x++)
+            {
+                for (int z = 0; z < maptiles.GetLength(1); z++)
+                {
+                    maptiles[x, z].Color = "green";
+                }
+            }
+
+            foreach (var point in points)
+            {
+                Vector3 pos = new Vector3((float)point.Value.X, (float)point.Value.Y, (float)point.Value.Z);
+                Vector2 tilepos = new Vector2(pos.X * 20 + 50, pos.Z*20);
+
+                if(tilepos.X >=0 && tilepos.X <100 && tilepos.Y >= 0 && tilepos.Y < 100)
+                {
+                    maptiles[(int)tilepos.X, (int)tilepos.Y].Color = "red";
+                }
+
+            }
+
+            for (int x = 0; x < 100; x++)
+            {
+                for (int z = 0; z < 100; z++)
+                {
+                    if (x < z + 50 && x > -z + 50)
+                    {
+                        if (maptiles[x, z].Color == "red")
+                        {
+                            Vector3 vect = new Vector3((float)x / 10 - 5, -1, (float)z / 10 - 5);
+                            meshBuilderRed.AddBox(vect, 0.06, 0.06, 0.06, BoxFaces.All);
+                        }
+                        else
+                        {
+                            Vector3 vect = new Vector3((float)x / 10 - 5, -1, (float)z / 10 - 5);
+                            meshBuilderGreen.AddBox(vect, 0.06, 0.06, 0.06, BoxFaces.All);
+                        }
+                    }
+                    
+                }
+            }
+
+            meshGeometry = meshBuilderRed.ToMeshGeometry3D();
+            meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
+
+            Dispatcher.Invoke(() =>
+            {
+                mapModelRed.Geometry = meshGeometry;
+                mapModelRed.Material = PhongMaterials.Red;
+            });
+
+            meshGeometry = meshBuilderGreen.ToMeshGeometry3D();
+            meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
+
+            Dispatcher.Invoke(() =>
+            {
+                mapModelGreen.Geometry = meshGeometry;
+                mapModelGreen.Material = PhongMaterials.Green;
+            });
+
+
+        }
+
 
         private ImageSource ToBitmap(DepthFrame frame)
         {
@@ -376,6 +499,21 @@ namespace KinectNav
 
             return BitmapSource.Create(width, height, 96, 96, format, null, pixelData, stride);
 
+        }
+
+        private void btn_showRawDepth_Click(object sender, RoutedEventArgs e)
+        {
+            drawmode = "points";
+        }
+
+        private void btn_obstPoints_Click(object sender, RoutedEventArgs e)
+        {
+            drawmode = "obstPoints";
+        }
+
+        private void btn_map_Click(object sender, RoutedEventArgs e)
+        {
+            drawmode = "map";
         }
     }
 }

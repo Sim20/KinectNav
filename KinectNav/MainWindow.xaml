@@ -7,17 +7,31 @@
         xmlns:hx="http://helix-toolkit.org/wpf/SharpDX"
         xmlns:local="clr-namespace:KinectNav"
         mc:Ignorable="d"
-        Title="MainWindow" Height="900" Width="1500" Loaded="Window_Loaded" Closed="Window_Closed">
-    
-    <Window.DataContext>
-        <local:MainWindow />
-    </Window.DataContext>
+        Title="MainWindow" Height="900" Width="1800" Loaded="Window_Loaded" Closed="Window_Closed">
+
 
     <Window.Resources>
         <hx:RenderTechniqueConverter x:Key="RenderTechniqueConverter" />
     </Window.Resources>
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
         <Menu Grid.Row="0" VerticalAlignment="Top">
             <Menu.Background>
                 <SolidColorBrush Opacity="0.5" Color="WhiteSmoke" />
@@ -26,29 +40,20 @@
                 <MenuItem Command="{Binding UpXCommand}" Header="Up Dir X" />
             </MenuItem>
         </Menu>
-        <!--
-        <h:HelixViewport3D>
-            <h:HelixViewport3D.Camera>
-                <PerspectiveCamera Position="0,0,-1.2" LookDirection="0,0,5" UpDirection="0,1,0" NearPlaneDistance="0.01" FarPlaneDistance="1000" FieldOfView="57"/>
-            </h:HelixViewport3D.Camera>
-            <h:DefaultLights/>
-            <ModelVisual3D x:Name="MOD">
-            </ModelVisual3D>
-        </h:HelixViewport3D>
-        -->
+
         <hx:Viewport3DX
             x:Name="view1"
             Title="{Binding Title}"
-            Grid.Row="0"
+            Grid.Row="1"
             Grid.Column="0"
             CoordinateSystemLabelForeground="White"
             EffectsManager="{Binding EffectsManager}"
             MSAA="Eight"
             RenderTechnique="{Binding RenderTechnique}"
-            ShowCoordinateSystem="False"
+            ShowCoordinateSystem="True"
             SubTitle="{Binding SubTitle}"
             TextBrush="Black"
-            UseDefaultGestures="False">
+            UseDefaultGestures="False" Grid.ColumnSpan="6">
             <hx:Viewport3DX.BindingGroup>
                 <BindingGroup/>
             </hx:Viewport3DX.BindingGroup>
@@ -74,12 +79,52 @@
             <hx:AmbientLight3D Color="{Binding AmbientLightColor}" />
 
             <hx:DirectionalLight3D x:Name="light1"/>
+            
             <hx:MeshGeometryModel3D
                  x:Name="model1"
                 />
             <hx:MeshGeometryModel3D
                  x:Name="skeletonModel"
                 />
+
         </hx:Viewport3DX>
+
+        <hx:Viewport3DX
+            x:Name="mapView"
+            Grid.Row="1"
+            Grid.Column="6"
+            MSAA="Eight"
+            ShowCoordinateSystem="True"
+            SubTitle="{Binding SubTitle}"
+            TextBrush="Black"
+            UseDefaultGestures="False" 
+            Grid.ColumnSpan="5">
+
+            <hx:Viewport3DX.BindingGroup>
+                <BindingGroup/>
+            </hx:Viewport3DX.BindingGroup>
+            <hx:Viewport3DX.Camera>
+                <hx:OrthographicCamera x:Name="mapCam" Position="0,1,0" LookDirection="0,-5,0.00000001" UpDirection="0,0,1" ></hx:OrthographicCamera>
+            </hx:Viewport3DX.Camera>
+
+            <hx:AmbientLight3D Color="{Binding AmbientLightColor}" />
+
+            <hx:DirectionalLight3D x:Name="light2" Direction="0,-1,0"/>
+            
+            <hx:MeshGeometryModel3D
+                 x:Name="mapModelRed"
+                />
+            <hx:MeshGeometryModel3D
+                 x:Name="mapModelGreen"
+                />
+
+        </hx:Viewport3DX>
+            
+        
+            
+        <Button x:Name="btn_showRawDepth" Grid.Column="0" Grid.Row="0" Content="Raw depth data" Height="40" VerticalAlignment="Top" Click="btn_showRawDepth_Click" />
+        <Button x:Name="btn_obstPoints" Content="Colision points" Grid.Column="1" Grid.Row="0" Click="btn_obstPoints_Click"/>
+        <Button x:Name="btn_map" Content="Map" Grid.Column="2" Grid.Row="0" Click="btn_map_Click" />
+
     </Grid>
 </Window>
