@@ -19,11 +19,11 @@ namespace KinectNav
 
         public static void Connect()
         {
-            kinectThread = new Thread(kinectT);
+            kinectThread = new Thread(KinectT);
             kinectThread.Start();
         }
 
-        private static void kinectT()
+        private static void KinectT()
         {
             _sensor = KinectSensor.GetDefault();
 
@@ -35,6 +35,9 @@ namespace KinectNav
                 _reader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived;
 
                 coordinateMapper = _sensor.CoordinateMapper;
+
+                FrameDescription frameDescription = _sensor.DepthFrameSource.FrameDescription;
+                bodyFrameReader = _sensor.BodyFrameSource.OpenReader();
             }
 
             else
@@ -70,8 +73,10 @@ namespace KinectNav
 
                 MapDepthFrame(depthFrame);
                 UpdateBody(bodyFrame);
+
                 DrawController.DrawPoints();
                 DrawController.DrawMap();
+                DrawController.DrawBody();
             }
 
             finally
