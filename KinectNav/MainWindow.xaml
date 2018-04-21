@@ -9,7 +9,6 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="900" Width="1800" Loaded="Window_Loaded" Closed="Window_Closed">
 
-
     <Window.Resources>
         <hx:RenderTechniqueConverter x:Key="RenderTechniqueConverter" />
     </Window.Resources>

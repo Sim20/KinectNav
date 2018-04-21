@@ -14,7 +14,6 @@ namespace KinectNav
         static KinectSensor _sensor;
         static MultiSourceFrameReader _reader;
         static Thread kinectThread;
-        static private BodyFrameReader bodyFrameReader = null;
         static private CoordinateMapper coordinateMapper = null;
 
         public static void Connect()
@@ -70,8 +69,10 @@ namespace KinectNav
 
                 MapDepthFrame(depthFrame);
                 UpdateBody(bodyFrame);
+
                 DrawController.DrawPoints();
                 DrawController.DrawMap();
+                DrawController.DrawBody();
             }
 
             finally
