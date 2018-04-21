@@ -47,7 +47,6 @@ namespace KinectNav
             model1.Material = PhongMaterials.Red;
             mapModelRed.Material = PhongMaterials.Red;
             mapModelGreen.Material = PhongMaterials.Green;
-            skeletonModel.Material = PhongMaterials.Yellow;
         }
 
         private void Window_Closed(object sender, EventArgs e)
