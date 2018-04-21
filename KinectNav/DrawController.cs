@@ -127,7 +127,7 @@ namespace KinectNav
             }
         }
 
-        public static void DrawBody()
+        public static void DrawJoints()
         {
             MeshBuilder meshBuilder = new MeshBuilder();
 
@@ -152,7 +152,6 @@ namespace KinectNav
                         TrackingState trackingState = joints[joint].TrackingState;
 
                         meshBuilder.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), 0.07, 0.07, 0.07, BoxFaces.Top);
-
                     }
                 }
             }

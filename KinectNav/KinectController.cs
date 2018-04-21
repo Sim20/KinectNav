@@ -72,7 +72,7 @@ namespace KinectNav
 
                 DrawController.DrawPoints();
                 DrawController.DrawMap();
-                DrawController.DrawBody();
+                DrawController.DrawJoints();
             }
 
             finally
@@ -107,11 +107,14 @@ namespace KinectNav
             if (bodyFrame != null)
             {
                 if (BodyData.bodies == null)
-                {
+                {   
                     BodyData.bodies = new Body[bodyFrame.BodyCount];
+                    
                 }
 
                 bodyFrame.GetAndRefreshBodyData(BodyData.bodies);
+
+                BodyData.UpdateBodyData();
             }
         }
 

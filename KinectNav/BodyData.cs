@@ -11,6 +11,9 @@ namespace KinectNav
     static class BodyData
     {
         public static List<Tuple<JointType, JointType>> bones;
+        public static Body[] bodies;
+
+        private const float InferredZPositionClamp = 0.1f;
 
         static BodyData()
         {
@@ -57,6 +60,9 @@ namespace KinectNav
             bones.Add(new Tuple<JointType, JointType>(JointType.AnkleLeft, JointType.FootLeft));
         }
 
-        public static Body[] bodies;
+        public static void UpdateBodyData()
+        {
+
+        }
     }
 }
