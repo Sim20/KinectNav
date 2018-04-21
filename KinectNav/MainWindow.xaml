@@ -26,9 +26,6 @@
             <ColumnDefinition Width="150" />
             <ColumnDefinition Width="150" />
             <ColumnDefinition Width="150" />
-            <ColumnDefinition Width="150" />
-            <ColumnDefinition Width="150" />
-            <ColumnDefinition Width="150" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -84,6 +81,8 @@
 
             <hx:MeshGeometryModel3D
                  x:Name="model1"
+                
+                Geometry="{Binding Model1Geometry}"
                 />
             <hx:MeshGeometryModel3D
                  x:Name="skeletonModel"
