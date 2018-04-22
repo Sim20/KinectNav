@@ -117,6 +117,9 @@
             <hx:MeshGeometryModel3D
                  x:Name="mapModelGreen"
                 />
+            <hx:MeshGeometryModel3D
+                 x:Name="mapModelYellow"
+                />
 
         </hx:Viewport3DX>
         <Button x:Name="btn_UpdateGroundPlane" Content="Update ground plane"  Grid.Row="0" Grid.Column="1" Click="btn_UpdateGroundPlane_Click" />

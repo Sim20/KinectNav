@@ -20,8 +20,7 @@ namespace KinectNav
 
         public static List<int> AllPointsIndexes = new List<int>();
         public static List<int> ObstPointsIndexes = new List<int>();
-        public static List<int> GroundPointsIndexes = new List<int>();
-        public static List<int> BodyPointsIndexes = new List<int>();
+        public static List<int> GroundPointsIndexes = new List<int>();  
 
         static Plane groundPlane;
 

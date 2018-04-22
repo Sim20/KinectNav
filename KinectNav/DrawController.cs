@@ -17,13 +17,9 @@ namespace KinectNav
         static MeshGeometry3D meshGeometry = new MeshGeometry3D();
         static MeshGeometry3D meshGeometryMapGreen = new MeshGeometry3D();
         static MeshGeometry3D meshGeometryMapRed = new MeshGeometry3D();
+        static MeshGeometry3D meshGeometryMapYellow = new MeshGeometry3D();
 
         private const float InferredZPositionClamp = 0.1f;
-
-        static DrawController()
-        {
-
-        }
 
         public static void DrawPoints()
         {
@@ -58,6 +54,7 @@ namespace KinectNav
         {
             MeshBuilder meshBuilderRed = new MeshBuilder();
             MeshBuilder meshBuilderGreen = new MeshBuilder();
+            MeshBuilder meshBuilderYellow= new MeshBuilder();
 
             int mapSizeX = _2DMap.mapSizeX;
             int mapSizeZ = _2DMap.mapSizeZ;
@@ -72,12 +69,17 @@ namespace KinectNav
 
             foreach (var index in DepthData.GroundPointsIndexes)
             {
-                CreateTile(index, "green");
+                _2DMap.CreateTiles(index, "green");
             }
 
             foreach (var index in DepthData.ObstPointsIndexes)
             {
-                CreateTile(index, "red");
+                _2DMap.CreateTiles(index, "red");
+            }
+
+            foreach (var point in BodyData.FootPoints)
+            {
+                _2DMap.DrawFootTiles(point);
             }
 
             for (int x = 0; x < mapSizeX; x++)
@@ -96,35 +98,24 @@ namespace KinectNav
                         {
                             meshBuilderGreen.AddBox(vect, 0.08, 0.08, 0.08, BoxFaces.All);
                         }
+                        else if (_2DMap.maptiles[x, z].Color == "yellow")
+                        {
+                            meshBuilderYellow.AddBox(vect, 0.08, 0.08, 0.08, BoxFaces.All);
+                        }
                     }
-
                 }
             }
 
             meshGeometryMapRed = meshBuilderRed.ToMeshGeometry3D();
             meshGeometryMapGreen = meshBuilderGreen.ToMeshGeometry3D();
+            meshGeometryMapYellow = meshBuilderYellow.ToMeshGeometry3D();
 
             MainWindow.main.Dispatcher.Invoke(() =>
             {
                 MainWindow.main.mapModelRed.Geometry = meshGeometryMapRed;
                 MainWindow.main.mapModelGreen.Geometry = meshGeometryMapGreen;
+                MainWindow.main.mapModelYellow.Geometry = meshGeometryMapYellow;
             });
-        }
-
-        private static void CreateTile(int index, string str)
-        {
-            int mapZoom = _2DMap.mapZoom;
-            int mapSizeX = _2DMap.mapSizeX;
-            int mapSizeZ = _2DMap.mapSizeZ;
-
-            Vector3 pos = new Vector3((float)DepthData.allPoints[index].X, (float)DepthData.allPoints[index].Y, (float)DepthData.allPoints[index].Z);
-
-            Vector2 tilepos = new Vector2(Convert.ToInt32(pos.X * mapZoom + mapSizeX / 2), Convert.ToInt32(pos.Z * mapZoom));
-
-            if (tilepos.X >= 0 && tilepos.X < mapSizeX && tilepos.Y >= 0 && tilepos.Y < mapSizeZ)
-            {
-                _2DMap.maptiles[(int)tilepos.X, (int)tilepos.Y].Color = str;
-            }
         }
 
         public static void DrawJoints()

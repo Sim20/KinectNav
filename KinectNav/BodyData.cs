@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Media3D = System.Windows.Media.Media3D;
 using Microsoft.Kinect;
+using SharpDX;
 
 namespace KinectNav
 {
@@ -12,6 +13,8 @@ namespace KinectNav
     {
         public static List<Tuple<JointType, JointType>> bones;
         public static Body[] bodies;
+
+        public static List<Media3D.Point3D> FootPoints = new List<Media3D.Point3D>();
 
         private const float InferredZPositionClamp = 0.1f;
 
@@ -62,7 +65,36 @@ namespace KinectNav
 
         public static void UpdateBodyData()
         {
+            int i = 0;
 
+            foreach (Body body in bodies)
+            {
+                if (body.IsTracked)
+                {
+                    IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+                    FootPoints.Clear();
+
+                    foreach (JointType joint in joints.Keys)
+                    {
+                        // sometimes the depth(Z) of an inferred joint may show as negative
+                        // clamp down to 0.1f to prevent coordinatemapper from returning (-Infinity, -Infinity)
+
+                        CameraSpacePoint position = joints[joint].Position;
+
+                        if (position.Z < 0)
+                        {
+                            position.Z = InferredZPositionClamp;
+                        }
+
+                        TrackingState trackingState = joints[joint].TrackingState;
+
+                        if (joint == JointType.FootLeft || joint == JointType.FootRight)
+                        {
+                            FootPoints.Add(new Media3D.Point3D((float)position.X, (float)position.Y, (float)position.Z));
+                        }
+                    }
+                }
+            }
         }
     }
 }
