@@ -13,8 +13,16 @@
         <hx:RenderTechniqueConverter x:Key="RenderTechniqueConverter" />
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="contentGrid">
         <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
             <RowDefinition Height="40"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -28,30 +36,35 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Menu Grid.Row="0" VerticalAlignment="Top">
+        <ContentControl x:Name="CC1" Grid.Column="0" Grid.Row="1" ></ContentControl>
+        <ContentControl x:Name="CC2" Grid.Column="0" Grid.Row="2" ></ContentControl>
+        <ContentControl x:Name="CC3" Grid.Column="0" Grid.Row="3" ></ContentControl>
+        <ContentControl x:Name="CC4" Grid.Column="0" Grid.Row="4" ></ContentControl>
+        <ContentControl x:Name="CC5" Grid.Column="0" Grid.Row="5" ></ContentControl>
+        <ContentControl x:Name="CC6" Grid.Column="0" Grid.Row="6" ></ContentControl>
+        
+        <Menu Grid.Row="0" Grid.Column="1" VerticalAlignment="Top">
             <Menu.Background>
                 <SolidColorBrush Opacity="0.5" Color="WhiteSmoke" />
             </Menu.Background>
             <MenuItem Header="View">
                 <MenuItem x:Name="header_rawDepth" Header="Raw depth" Click="header_rawDepth_Click" />
                 <MenuItem x:Name="header_collisionOoints" Header="Collision points" Click="header_collisionOoints_Click" />
-                <MenuItem x:Name="header_showNone" Header="Freeze" Click="header_showNone_Click" />
+                <MenuItem x:Name="header_showNone" Header="Body" Click="header_showNone_Click" />
             </MenuItem>
         </Menu>
 
         <hx:Viewport3DX
             x:Name="view1"
-            Title="{Binding Title}"
             Grid.Row="1"
-            Grid.Column="0"
+            Grid.Column="1"
             CoordinateSystemLabelForeground="White"
-            EffectsManager="{Binding EffectsManager}"
             MSAA="Eight"
-            RenderTechnique="{Binding RenderTechnique}"
             ShowCoordinateSystem="True"
-            SubTitle="{Binding SubTitle}"
             TextBrush="Black"
-            UseDefaultGestures="False" Grid.ColumnSpan="6">
+            UseDefaultGestures="False" 
+            Grid.ColumnSpan="5"
+            Grid.RowSpan="20">
             <hx:Viewport3DX.BindingGroup>
                 <BindingGroup/>
             </hx:Viewport3DX.BindingGroup>
@@ -98,7 +111,8 @@
             SubTitle="{Binding SubTitle}"
             TextBrush="Black"
             UseDefaultGestures="False" 
-            Grid.ColumnSpan="5">
+            Grid.ColumnSpan="5"
+            Grid.RowSpan="20">
 
             <hx:Viewport3DX.BindingGroup>
                 <BindingGroup/>
@@ -122,7 +136,7 @@
                 />
 
         </hx:Viewport3DX>
-        <Button x:Name="btn_UpdateGroundPlane" Content="Update ground plane"  Grid.Row="0" Grid.Column="1" Click="btn_UpdateGroundPlane_Click" />
+        <Button x:Name="btn_UpdateGroundPlane" Content="Update ground plane"  Grid.Row="0" Grid.Column="2" VerticalAlignment="Top" Click="btn_UpdateGroundPlane_Click" />
 
     </Grid>
 </Window>

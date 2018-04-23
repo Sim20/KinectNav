@@ -1,21 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using Color = System.Windows.Media.Color;
-using Colors = System.Windows.Media.Colors;
-using System.Windows.Shapes;
-
-using Microsoft.Kinect;
-using Media3D = System.Windows.Media.Media3D;
-using System.Diagnostics;
-
-using System.Threading;
 using HelixToolkit.Wpf.SharpDX;
-using HelixToolkit.Wpf.SharpDX.Core;
 using SharpDX;
 
 

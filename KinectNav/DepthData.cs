@@ -22,7 +22,7 @@ namespace KinectNav
         public static List<int> ObstPointsIndexes = new List<int>();
         public static List<int> GroundPointsIndexes = new List<int>();  
 
-        static Plane groundPlane;
+        public static Plane groundPlane;
 
         public static void UpdatePoints(CameraSpacePoint[] camerapoints)
         {
@@ -42,6 +42,7 @@ namespace KinectNav
                     allPoints.Add(i, new Media3D.Point3D(point.X, point.Y, point.Z));
                     AllPointsIndexes.Add(i);
                 }
+                i++;
             }
 
             if (UpdateFloor)

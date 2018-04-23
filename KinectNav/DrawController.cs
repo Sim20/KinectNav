@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows;
 using Microsoft.Kinect;
 
 using HelixToolkit.Wpf.SharpDX;
@@ -54,7 +53,7 @@ namespace KinectNav
         {
             MeshBuilder meshBuilderRed = new MeshBuilder();
             MeshBuilder meshBuilderGreen = new MeshBuilder();
-            MeshBuilder meshBuilderYellow= new MeshBuilder();
+            MeshBuilder meshBuilderYellow = new MeshBuilder();
 
             int mapSizeX = _2DMap.mapSizeX;
             int mapSizeZ = _2DMap.mapSizeZ;
@@ -142,19 +141,32 @@ namespace KinectNav
 
                         TrackingState trackingState = joints[joint].TrackingState;
 
-                        meshBuilder.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), 0.07, 0.07, 0.07, BoxFaces.Top);
+                        meshBuilder.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), 0.07, 0.07, 0.07, BoxFaces.All);
                     }
                 }
+
+                meshGeometry = meshBuilder.ToMeshGeometry3D();
+                meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
+
+                MainWindow.main.Dispatcher.Invoke(() =>
+                {
+                    MainWindow.main.skeletonModel.Geometry = meshGeometry;
+                });
             }
 
-            meshGeometry = meshBuilder.ToMeshGeometry3D();
-            meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
+        }
 
+        public static void UpdateGestureResult()
+        {
             MainWindow.main.Dispatcher.Invoke(() =>
             {
-                MainWindow.main.skeletonModel.Geometry = meshGeometry;
+                MainWindow.main.CC1.Content = BodyData.gestureDetectorList[0].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[0].GestureResultView.DetectedGesture;
+                MainWindow.main.CC2.Content = BodyData.gestureDetectorList[1].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[1].GestureResultView.DetectedGesture;
+                MainWindow.main.CC3.Content = BodyData.gestureDetectorList[2].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[2].GestureResultView.DetectedGesture;
+                MainWindow.main.CC4.Content = BodyData.gestureDetectorList[3].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[3].GestureResultView.DetectedGesture;
+                MainWindow.main.CC5.Content = BodyData.gestureDetectorList[4].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[4].GestureResultView.DetectedGesture;
+                MainWindow.main.CC6.Content = BodyData.gestureDetectorList[5].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[5].GestureResultView.DetectedGesture;
             });
-
         }
     }
 }

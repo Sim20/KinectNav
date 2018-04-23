@@ -1,29 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Media3D = System.Windows.Media.Media3D;
 using Microsoft.Kinect;
+using System.Windows;
 using SharpDX;
 
 namespace KinectNav
 {
     static class BodyData
     {
-        public static List<Tuple<JointType, JointType>> bones;
-        public static Body[] bodies;
-
-        public static List<Media3D.Point3D> FootPoints = new List<Media3D.Point3D>();
+        public static Body[] bodies { get; set; }
 
         private const float InferredZPositionClamp = 0.1f;
 
+        public static List<GestureDetector> gestureDetectorList { get; }
+        public static List<Tuple<JointType, JointType>> bones;
+
+        public static List<Media3D.Point3D> FootPoints { get; }
+
         static BodyData()
         {
-            // SKELETON DETECTION ->
+            FootPoints = new List<Media3D.Point3D>();
+            gestureDetectorList = new List<GestureDetector>();
 
-            // a bone defined as a line between two joints
-            bones = new List<Tuple<JointType, JointType>>();
+            int maxBodies = KinectController._sensor.BodyFrameSource.BodyCount;
+
+            // create a gesture detector for each body (6 bodies => 6 detectors) and create content controls to display results in the UI
+            for (int i = 0; i < maxBodies; ++i)
+            {
+                GestureResult result = new GestureResult(i, false, false, 0.0f);
+                GestureDetector detector = new GestureDetector(KinectController._sensor, result);
+                gestureDetectorList.Add(detector);
+            }
+
+            // SKELETON DETECTION ->
 
             // a bone defined as a line between two joints
             bones = new List<Tuple<JointType, JointType>>();
@@ -65,13 +75,36 @@ namespace KinectNav
 
         public static void UpdateBodyData()
         {
-            int i = 0;
+            int maxBodies = KinectController._sensor.BodyFrameSource.BodyCount;
+
+            if (bodies != null)
+            {
+                // loop through all bodies to see if any of the gesture detectors need to be updated
+                for (int i = 0; i < maxBodies; ++i)
+                {
+                    Body b = bodies[i];
+                    ulong trackingId = b.TrackingId;
+
+                    // if the current body TrackingId changed, update the corresponding gesture detector with the new value
+                    if (trackingId != gestureDetectorList[i].TrackingId)
+                    {
+                        gestureDetectorList[i].TrackingId = trackingId;
+
+                        // if the current body is tracked, unpause its detector to get VisualGestureBuilderFrameArrived events
+                        // if the current body is not tracked, pause its detector so we don't waste resources trying to get invalid gesture results
+                        gestureDetectorList[i].IsPaused = trackingId == 0;
+                    }
+                }
+            }
+
+            // DrawBody
 
             foreach (Body body in bodies)
             {
+
                 if (body.IsTracked)
                 {
-                    IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+                    IReadOnlyDictionary<JointType, Joint> joints = body.Joints;             
                     FootPoints.Clear();
 
                     foreach (JointType joint in joints.Keys)
@@ -91,7 +124,7 @@ namespace KinectNav
                         if (joint == JointType.FootLeft || joint == JointType.FootRight)
                         {
                             FootPoints.Add(new Media3D.Point3D((float)position.X, (float)position.Y, (float)position.Z));
-                        }
+                        } 
                     }
                 }
             }

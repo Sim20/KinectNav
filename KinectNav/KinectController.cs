@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 using Microsoft.Kinect;
 
@@ -11,10 +7,10 @@ namespace KinectNav
 {
     static class KinectController
     {
-        static KinectSensor _sensor;
+        public static KinectSensor _sensor;
         static MultiSourceFrameReader _reader;
         static Thread kinectThread;
-        static private CoordinateMapper coordinateMapper = null;
+        private static CoordinateMapper coordinateMapper = null;
 
         public static void Connect()
         {
@@ -73,6 +69,7 @@ namespace KinectNav
                 DrawController.DrawPoints();
                 DrawController.DrawMap();
                 DrawController.DrawJoints();
+                DrawController.UpdateGestureResult();
             }
 
             finally
@@ -104,16 +101,22 @@ namespace KinectNav
 
         public static void UpdateBody(BodyFrame bodyFrame)
         {
+            bool BodyDataReceived = false;
+
             if (bodyFrame != null)
             {
                 if (BodyData.bodies == null)
                 {   
-                    BodyData.bodies = new Body[bodyFrame.BodyCount];
-                    
+                    BodyData.bodies = new Body[bodyFrame.BodyCount]; 
                 }
 
                 bodyFrame.GetAndRefreshBodyData(BodyData.bodies);
+                
+                BodyDataReceived = true;
+            }
 
+            if (BodyDataReceived)
+            {
                 BodyData.UpdateBodyData();
             }
         }
