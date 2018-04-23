@@ -143,6 +143,17 @@ namespace KinectNav
 
                         meshBuilder.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), 0.07, 0.07, 0.07, BoxFaces.All);
                     }
+
+                    foreach (var bone in BodyData.bones)
+                    {
+                        Joint joint0 = joints[bone.Item1];
+                        Joint joint1 = joints[bone.Item1];
+
+                        if (joint0.TrackingState == TrackingState.Tracked && joint1.TrackingState == TrackingState.Tracked)
+                        { 
+                            meshBuilder.AddArrow(BodyData.jointPoints[bone.Item1], BodyData.jointPoints[bone.Item2], 0.01);
+                        }
+                    }
                 }
 
                 meshGeometry = meshBuilder.ToMeshGeometry3D();

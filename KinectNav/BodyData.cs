@@ -18,6 +18,8 @@ namespace KinectNav
 
         public static List<Media3D.Point3D> FootPoints { get; }
 
+        public static Dictionary<JointType, Vector3> jointPoints = new Dictionary<JointType, Vector3>();
+
         static BodyData()
         {
             FootPoints = new List<Media3D.Point3D>();
@@ -97,14 +99,14 @@ namespace KinectNav
                 }
             }
 
-            // DrawBody
-
             foreach (Body body in bodies)
             {
 
                 if (body.IsTracked)
                 {
-                    IReadOnlyDictionary<JointType, Joint> joints = body.Joints;             
+                    IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+
+                    jointPoints.Clear();
                     FootPoints.Clear();
 
                     foreach (JointType joint in joints.Keys)
@@ -118,6 +120,8 @@ namespace KinectNav
                         {
                             position.Z = InferredZPositionClamp;
                         }
+
+                        jointPoints[joint] = new Vector3(position.X, position.Y, position.Z);
 
                         TrackingState trackingState = joints[joint].TrackingState;
 
