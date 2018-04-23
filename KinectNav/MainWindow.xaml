@@ -29,10 +29,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150" />
             <ColumnDefinition Width="150" />
-            <ColumnDefinition Width="150" />
-            <ColumnDefinition Width="150" />
-            <ColumnDefinition Width="150" />
-            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -42,7 +39,7 @@
         <ContentControl x:Name="CC4" Grid.Column="0" Grid.Row="4" ></ContentControl>
         <ContentControl x:Name="CC5" Grid.Column="0" Grid.Row="5" ></ContentControl>
         <ContentControl x:Name="CC6" Grid.Column="0" Grid.Row="6" ></ContentControl>
-        
+
         <Menu Grid.Row="0" Grid.Column="1" VerticalAlignment="Top">
             <Menu.Background>
                 <SolidColorBrush Opacity="0.5" Color="WhiteSmoke" />
@@ -63,7 +60,7 @@
             ShowCoordinateSystem="True"
             TextBrush="Black"
             UseDefaultGestures="False" 
-            Grid.ColumnSpan="5"
+            Grid.ColumnSpan="2"
             Grid.RowSpan="20">
             <hx:Viewport3DX.BindingGroup>
                 <BindingGroup/>
@@ -84,59 +81,33 @@
                 <MouseBinding Command="hx:ViewportCommands.Pan" Gesture="LeftClick" />
             </hx:Viewport3DX.InputBindings>
 
-            <hx:LineGeometryModel3D
-                x:Name="grid" ></hx:LineGeometryModel3D>
-
+            <hx:LineGeometryModel3D x:Name="grid" />
             <hx:AmbientLight3D Color="{Binding AmbientLightColor}" />
-
-            <hx:DirectionalLight3D x:Name="light1"/>
-
-            <hx:MeshGeometryModel3D
-                 x:Name="model1"
-                
-                Geometry="{Binding Model1Geometry}"
-                />
-            <hx:MeshGeometryModel3D
-                 x:Name="skeletonModel"
-                />
-
+            <hx:DirectionalLight3D x:Name="light1" />
+            <hx:MeshGeometryModel3D x:Name="model1" />
+            <hx:MeshGeometryModel3D x:Name="skeletonModel" />
         </hx:Viewport3DX>
 
         <hx:Viewport3DX
             x:Name="mapView"
             Grid.Row="1"
-            Grid.Column="6"
+            Grid.Column="3"
             MSAA="Eight"
             ShowCoordinateSystem="True"
             SubTitle="{Binding SubTitle}"
             TextBrush="Black"
             UseDefaultGestures="False" 
-            Grid.ColumnSpan="5"
             Grid.RowSpan="20">
 
-            <hx:Viewport3DX.BindingGroup>
-                <BindingGroup/>
-            </hx:Viewport3DX.BindingGroup>
             <hx:Viewport3DX.Camera>
                 <hx:OrthographicCamera x:Name="mapCam" Position="0,1,0" LookDirection="0,-5,0.00000001" UpDirection="0,0,1" ></hx:OrthographicCamera>
             </hx:Viewport3DX.Camera>
-
-            <hx:AmbientLight3D Color="{Binding AmbientLightColor}" />
-
+            
             <hx:DirectionalLight3D x:Name="light2" Direction="0,-1,0"/>
-
-            <hx:MeshGeometryModel3D
-                 x:Name="mapModelRed"
-                />
-            <hx:MeshGeometryModel3D
-                 x:Name="mapModelGreen"
-                />
-            <hx:MeshGeometryModel3D
-                 x:Name="mapModelYellow"
-                />
-
+            <hx:MeshGeometryModel3D x:Name="mapModelRed" />
+            <hx:MeshGeometryModel3D x:Name="mapModelGreen" />
+            <hx:MeshGeometryModel3D x:Name="mapModelYellow" />
         </hx:Viewport3DX>
-        <Button x:Name="btn_UpdateGroundPlane" Content="Update ground plane"  Grid.Row="0" Grid.Column="2" VerticalAlignment="Top" Click="btn_UpdateGroundPlane_Click" />
-
+        <Button x:Name="btn_UpdateGroundPlane" Content="Update ground plane"  Grid.Row="0" Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Left" Click="btn_UpdateGroundPlane_Click"  />
     </Grid>
 </Window>
