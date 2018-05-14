@@ -256,7 +256,7 @@ namespace KinectNav
 
             else
             {
-                contentControl.Content = gestureDetector.GestureResultView.BodyIndex + ": " + gestureDetector.GestureResultView.DetectedGesture;
+                contentControl.Content = gestureDetector.GestureResultView.DetectedGesture;
             }
         }
     }
