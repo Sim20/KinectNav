@@ -13,17 +13,25 @@ namespace KinectNav
 {
     static class DepthData
     {
+        /// <summary> Points above this height are not considered obstacles </summary>
         private const float robotHeight = 1.5f;
-        public static bool UpdateFloor { get; set; }
 
+        /// <summary> True, if user requested floor plane opdate </summary>
+        public static bool UpdateFloor = true;
+
+        /// <summary> Dictionary of all depth points in the raw depth frame </summary>
         public static Dictionary<int, Media3D.Point3D> allPoints = new Dictionary<int, Media3D.Point3D>();
 
+        /// <summary> Lists of point indexes - all points, obstacle points, ground points </summary>
         public static List<int> AllPointsIndexes = new List<int>();
         public static List<int> ObstPointsIndexes = new List<int>();
-        public static List<int> GroundPointsIndexes = new List<int>();  
-
+        public static List<int> GroundPointsIndexes = new List<int>();
         public static Plane groundPlane;
 
+        /// <summary>
+        /// Updates points lists
+        /// </summary>
+        /// <param name="camerapoints"></param> Raw depth frame points mapped to camera space
         public static void UpdatePoints(CameraSpacePoint[] camerapoints)
         {
             allPoints.Clear();
@@ -31,9 +39,10 @@ namespace KinectNav
             ObstPointsIndexes.Clear();
             GroundPointsIndexes.Clear();
 
-            int max = 5;
+            int max = 5; // x,y,z position limit
 
-            for (int i = 0; i < camerapoints.Length; i++)
+            // update allPoints and AllPointsIndexes
+            for (int i = 0; i < camerapoints.Length; i = i + 2)
             {
                 var point = camerapoints[i];
 
@@ -42,50 +51,55 @@ namespace KinectNav
                     allPoints.Add(i, new Media3D.Point3D(point.X, point.Y, point.Z));
                     AllPointsIndexes.Add(i);
                 }
-                i++;
             }
 
             if (UpdateFloor)
             {
+                // run RANSAC, detect floor
                 UpdateGround();
                 UpdateFloor = false;
             }
 
-            //delete points under ground and over robot height
-
-            double yLimit = groundPlane.Normal.Y;
+            // filter points under ground and over robot height, update ObstPointsIndexes and GroundPointsIndexes
 
             foreach (var p in allPoints)
             {
-                double temp = groundPlane.Normal.X * p.Value.X + groundPlane.Normal.Y * p.Value.Y + groundPlane.Normal.Z * p.Value.Z + groundPlane.D + 0.05 ;
+                Vector3 B = new Vector3((float)p.Value.X, (float)p.Value.Y, (float)p.Value.Z);
 
-                if (temp < 0 && temp + robotHeight > 0)
+                double temp = (Vector3.Dot(B, groundPlane.Normal)) + groundPlane.D;
+
+                if (groundPlane.D > 0)
+                {
+                    temp = -temp;
+                }
+
+                if (temp + 0.07 < 0 && temp + robotHeight > 0)
                 {
                     ObstPointsIndexes.Add(p.Key);
                 }
 
-                else if (temp > 0)
+                else if (temp + 0.07 > 0)
                 {
                     GroundPointsIndexes.Add(p.Key);
                 }
             }
         }
 
-        private static void UpdateGround()             //RANSAC
-        {
+        /// <summary>
+        /// RANSAC, detects and updates groundPlane
+        /// </summary>
+        private static void UpdateGround()    
+        { 
             int maxIterations = 100;
             double threshDist = 0.05;
 
             int iterations = 0;
             int bestCount = 0;
 
-            Dictionary<int, Media3D.Point3D> bestSupport = new Dictionary<int, Media3D.Point3D>();
             List<int> RansacPointsIndexes = new List<int>();
 
             Plane bestPlane = new Plane();
             Random rnd = new Random();
-
-            RansacPointsIndexes.Clear();
 
             foreach (var point in allPoints)
             {
@@ -130,10 +144,12 @@ namespace KinectNav
             groundPlane = bestPlane;
         }
 
-        private static float ComputeDistance(Media3D.Point3D point, Plane plane)
+        /// <summary>
+        /// Returns distance between point and plane
+        /// </summary>
+        private static float ComputeDistance(Media3D.Point3D point, Plane plane) 
         {
             Vector3 vector = new Vector3((float)point.X, (float)point.Y, (float)point.Z);
-
             return Vector3.Dot(plane.Normal, vector) + plane.D;
         }
     }

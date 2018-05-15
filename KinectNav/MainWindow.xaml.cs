@@ -27,13 +27,18 @@ namespace KinectNav
             light1.Color = SharpDX.Color.White;
             light1.Direction = new Vector3(0, 0, 5);
 
-            KinectController.Connect();
-
+            // model color setup
             model1.Material = PhongMaterials.Red;
             mapModelRed.Material = PhongMaterials.Red;
             mapModelGreen.Material = PhongMaterials.Green;
             mapModelYellow.Material = PhongMaterials.Yellow;
             skeletonModel.Material = PhongMaterials.Yellow;
+            skeletonRed.Material = PhongMaterials.Red;
+            skeletonGreen.Material = PhongMaterials.Green;
+            skeletonBlue.Material = PhongMaterials.Blue;
+
+            // connect to sensor
+            KinectController.Connect();
         }
 
         private void Window_Closed(object sender, EventArgs e)

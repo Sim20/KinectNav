@@ -1,25 +1,35 @@
-﻿using System;
+﻿using HelixToolkit.Wpf.SharpDX;
+using HelixToolkit.Wpf.SharpDX.Core;
+using Microsoft.Kinect;
+using SharpDX;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Kinect;
-
-using HelixToolkit.Wpf.SharpDX;
-using HelixToolkit.Wpf.SharpDX.Core;
-using SharpDX;
 
 namespace KinectNav
 {
     static class DrawController
     {
+        /// <summary> Hand and skeleton box model size </summary>
+        static readonly float skeletonBoxSize = (float)0.05;
+        static readonly float handBoxSize = (float)0.08;
+
+        /// <summary>  Draw mode for point view UI </summary>
         public static string DrawMode { get; set; }
 
+        /// <summary> Meshes for view models </summary>
         static MeshGeometry3D meshGeometry = new MeshGeometry3D();
         static MeshGeometry3D meshGeometryMapGreen = new MeshGeometry3D();
         static MeshGeometry3D meshGeometryMapRed = new MeshGeometry3D();
         static MeshGeometry3D meshGeometryMapYellow = new MeshGeometry3D();
+        static MeshGeometry3D meshGeometrySkeletonRed = new MeshGeometry3D();
+        static MeshGeometry3D meshGeometrySkeletonGreen = new MeshGeometry3D();
+        static MeshGeometry3D meshGeometrySkeletonBlue = new MeshGeometry3D();
 
         private const float InferredZPositionClamp = 0.1f;
 
+        /// <summary>
+        /// Updates point view geometry from depth data
+        /// </summary>
         public static void DrawPoints()
         {
             MeshBuilder meshBuilder = new MeshBuilder();
@@ -49,6 +59,9 @@ namespace KinectNav
             });
         }
 
+        /// <summary>
+        /// Updates map tiles geometry
+        /// </summary>
         public static void DrawMap()
         {
             MeshBuilder meshBuilderRed = new MeshBuilder();
@@ -68,12 +81,12 @@ namespace KinectNav
 
             foreach (var index in DepthData.GroundPointsIndexes)
             {
-                _2DMap.CreateTiles(index, "green");
+                _2DMap.CreateTile(index, "green");
             }
 
             foreach (var index in DepthData.ObstPointsIndexes)
             {
-                _2DMap.CreateTiles(index, "red");
+                _2DMap.CreateTile(index, "red");
             }
 
             foreach (var point in BodyData.FootPoints)
@@ -117,11 +130,17 @@ namespace KinectNav
             });
         }
 
+        /// <summary>
+        /// Updates skeleton joints geometry
+        /// </summary>
         public static void DrawJoints()
         {
             MeshBuilder meshBuilder = new MeshBuilder();
+            MeshBuilder meshBulderRed = new MeshBuilder();
+            MeshBuilder meshBulderBlue = new MeshBuilder();
+            MeshBuilder meshBulderGreen = new MeshBuilder();
 
-            foreach (Body body in BodyData.bodies)
+            foreach (Body body in BodyData.Bodies)
             {
                 if (body.IsTracked)
                 {
@@ -141,43 +160,104 @@ namespace KinectNav
 
                         TrackingState trackingState = joints[joint].TrackingState;
 
-                        meshBuilder.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), 0.07, 0.07, 0.07, BoxFaces.All);
+                        // create skeleton and hands geometry
+
+                        if (joints[joint].JointType == JointType.HandLeft || joints[joint].JointType == JointType.HandRight)
+                        {
+                            var handState = body.HandLeftState;
+                            if (joints[joint].JointType == JointType.HandRight)
+                            {
+                                handState = body.HandRightState;
+                            }
+
+                            if (handState == HandState.Closed)
+                            {
+                                meshBulderRed.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), handBoxSize, handBoxSize, handBoxSize, BoxFaces.All);
+                            }
+
+                            if (handState == HandState.Open)
+                            {
+                                meshBulderGreen.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), handBoxSize, handBoxSize, handBoxSize, BoxFaces.All);
+                            }
+
+                            if (handState == HandState.Lasso)
+                            {
+                                meshBulderBlue.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), handBoxSize, handBoxSize, handBoxSize, BoxFaces.All);
+                            }
+
+                            meshGeometrySkeletonRed = meshBulderRed.ToMeshGeometry3D();
+                            meshGeometrySkeletonBlue = meshBulderBlue.ToMeshGeometry3D();
+                            meshGeometrySkeletonGreen = meshBulderGreen.ToMeshGeometry3D();
+
+                            MainWindow.main.Dispatcher.Invoke(() =>
+                            {
+                                MainWindow.main.skeletonRed.Geometry = meshGeometrySkeletonRed;
+                                MainWindow.main.skeletonBlue.Geometry = meshGeometrySkeletonBlue;
+                                MainWindow.main.skeletonGreen.Geometry = meshGeometrySkeletonGreen;
+                            });
+                        }
+                        else
+                        {
+                            meshBuilder.AddBox(new Vector3((float)position.X, (float)position.Y, (float)position.Z), skeletonBoxSize, skeletonBoxSize, skeletonBoxSize, BoxFaces.All);
+                        }
                     }
 
+                    // draw bones
                     foreach (var bone in BodyData.bones)
                     {
                         Joint joint0 = joints[bone.Item1];
                         Joint joint1 = joints[bone.Item1];
 
                         if (joint0.TrackingState == TrackingState.Tracked && joint1.TrackingState == TrackingState.Tracked)
-                        { 
+                        {
                             meshBuilder.AddArrow(BodyData.jointPoints[bone.Item1], BodyData.jointPoints[bone.Item2], 0.01);
                         }
                     }
+
+
                 }
-
-                meshGeometry = meshBuilder.ToMeshGeometry3D();
-                meshGeometry.Colors = new Color4Collection(meshGeometry.TextureCoordinates.Select(x => x.ToColor4()));
-
-                MainWindow.main.Dispatcher.Invoke(() =>
-                {
-                    MainWindow.main.skeletonModel.Geometry = meshGeometry;
-                });
             }
 
+            meshGeometry = meshBuilder.ToMeshGeometry3D();
+
+            MainWindow.main.Dispatcher.Invoke(() =>
+            {
+                MainWindow.main.skeletonModel.Geometry = meshGeometry;
+            });
         }
 
+        /// <summary>
+        /// Updates gesture result UI
+        /// </summary>
         public static void UpdateGestureResult()
         {
             MainWindow.main.Dispatcher.Invoke(() =>
             {
-                MainWindow.main.CC1.Content = BodyData.gestureDetectorList[0].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[0].GestureResultView.DetectedGesture;
-                MainWindow.main.CC2.Content = BodyData.gestureDetectorList[1].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[1].GestureResultView.DetectedGesture;
-                MainWindow.main.CC3.Content = BodyData.gestureDetectorList[2].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[2].GestureResultView.DetectedGesture;
-                MainWindow.main.CC4.Content = BodyData.gestureDetectorList[3].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[3].GestureResultView.DetectedGesture;
-                MainWindow.main.CC5.Content = BodyData.gestureDetectorList[4].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[4].GestureResultView.DetectedGesture;
-                MainWindow.main.CC6.Content = BodyData.gestureDetectorList[5].GestureResultView.BodyIndex + ": " + BodyData.gestureDetectorList[5].GestureResultView.DetectedGesture;
+                ProcessGestureDetector(BodyData.gestureDetectorList[0], MainWindow.main.CC1);
+                ProcessGestureDetector(BodyData.gestureDetectorList[1], MainWindow.main.CC2);
+                ProcessGestureDetector(BodyData.gestureDetectorList[2], MainWindow.main.CC3);
+                ProcessGestureDetector(BodyData.gestureDetectorList[3], MainWindow.main.CC4);
+                ProcessGestureDetector(BodyData.gestureDetectorList[4], MainWindow.main.CC5);
+                ProcessGestureDetector(BodyData.gestureDetectorList[5], MainWindow.main.CC6);
             });
+        }
+
+        private static void ProcessGestureDetector(GestureDetector gestureDetector, System.Windows.Controls.ContentControl contentControl)
+        {
+            if (gestureDetector.GestureResultView.IsTracked == false || gestureDetector.IsPaused == true)
+            {
+                contentControl.Content = "Not tracked";
+            }
+
+            else if (gestureDetector.GestureResultView.DetectedGesture == "None")
+            {
+                contentControl.Content = "Tracked, no gesture";
+            }
+
+            else
+            {
+                contentControl.Content = gestureDetector.GestureResultView.BodyIndex + ": " + gestureDetector.GestureResultView.DetectedGesture;
+            }
         }
     }
 }

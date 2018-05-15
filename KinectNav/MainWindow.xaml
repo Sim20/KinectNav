@@ -86,6 +86,9 @@
             <hx:DirectionalLight3D x:Name="light1" />
             <hx:MeshGeometryModel3D x:Name="model1" />
             <hx:MeshGeometryModel3D x:Name="skeletonModel" />
+            <hx:MeshGeometryModel3D x:Name="skeletonRed" />
+            <hx:MeshGeometryModel3D x:Name="skeletonBlue" />
+            <hx:MeshGeometryModel3D x:Name="skeletonGreen" />
         </hx:Viewport3DX>
 
         <hx:Viewport3DX

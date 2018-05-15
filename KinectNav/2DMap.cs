@@ -5,13 +5,16 @@ namespace KinectNav
 {
     static class _2DMap
     {
+        /// <summary> Map x,y size, map zoom relative to depth point data </summary>
         public const int mapSizeX = 100;
         public const int mapSizeZ = 100;
-
         public const int mapZoom = 20;
 
         public static MapTile[,] maptiles;
 
+        /// <summary>
+        /// Creates blank map
+        /// </summary>
         static _2DMap()
         {
             maptiles = new MapTile[mapSizeX, mapSizeZ];
@@ -24,8 +27,12 @@ namespace KinectNav
                 }
             }
         }
-
-        public static void CreateTiles(int index, string str)
+        /// <summary>
+        /// Creates colored map tile from depth point
+        /// </summary>
+        /// <param name="index"></param> Depth point index
+        /// <param name="str"></param> Map tile color
+        public static void CreateTile(int index, string str)
         {
             int mapZoom = _2DMap.mapZoom;
             int mapSizeX = _2DMap.mapSizeX;
@@ -41,6 +48,10 @@ namespace KinectNav
             }
         }
 
+        /// <summary>
+        /// Creates 5x5 yellow map tiles around a point
+        /// </summary>
+        /// <param name="point"></param> Point to draw around
         public static void DrawFootTiles(System.Windows.Media.Media3D.Point3D point)
         {
             Vector3 pos = new Vector3((float)point.X, (float)point.Y, (float)point.Z);

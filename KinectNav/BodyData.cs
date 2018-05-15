@@ -9,17 +9,19 @@ namespace KinectNav
 {
     static class BodyData
     {
-        public static Body[] bodies { get; set; }
-
+        /// <summary> used to clamp depth(Z) of a point with negative depth(Z) </summary>
         private const float InferredZPositionClamp = 0.1f;
 
+        /// <summary> Lists of bodies, gesture detectors, bones, footPoints and joint points in the frame </summary>
+        public static Body[] Bodies { get; set; }
         public static List<GestureDetector> gestureDetectorList { get; }
-        public static List<Tuple<JointType, JointType>> bones;
-
+        public static List<Tuple<JointType, JointType>> bones { get; }
         public static List<Media3D.Point3D> FootPoints { get; }
-
         public static Dictionary<JointType, Vector3> jointPoints = new Dictionary<JointType, Vector3>();
 
+        /// <summary>
+        /// Creates body data and bone lists  
+        /// </summary>
         static BodyData()
         {
             FootPoints = new List<Media3D.Point3D>();
@@ -75,16 +77,19 @@ namespace KinectNav
             bones.Add(new Tuple<JointType, JointType>(JointType.AnkleLeft, JointType.FootLeft));
         }
 
+        /// <summary>
+        /// Updates gesture detectors and skeleton joints locations
+        /// </summary>
         public static void UpdateBodyData()
         {
             int maxBodies = KinectController._sensor.BodyFrameSource.BodyCount;
 
-            if (bodies != null)
+            if (Bodies != null)
             {
                 // loop through all bodies to see if any of the gesture detectors need to be updated
                 for (int i = 0; i < maxBodies; ++i)
                 {
-                    Body b = bodies[i];
+                    Body b = Bodies[i];
                     ulong trackingId = b.TrackingId;
 
                     // if the current body TrackingId changed, update the corresponding gesture detector with the new value
@@ -99,22 +104,23 @@ namespace KinectNav
                 }
             }
 
-            foreach (Body body in bodies)
-            {
+            // update joint and foot positions
 
+            jointPoints.Clear();
+            FootPoints.Clear();
+
+            foreach (Body body in Bodies)
+            {
                 if (body.IsTracked)
                 {
                     IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
 
-                    jointPoints.Clear();
-                    FootPoints.Clear();
-
                     foreach (JointType joint in joints.Keys)
                     {
+                        CameraSpacePoint position = joints[joint].Position;
+
                         // sometimes the depth(Z) of an inferred joint may show as negative
                         // clamp down to 0.1f to prevent coordinatemapper from returning (-Infinity, -Infinity)
-
-                        CameraSpacePoint position = joints[joint].Position;
 
                         if (position.Z < 0)
                         {
