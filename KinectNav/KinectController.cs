@@ -44,11 +44,6 @@ namespace KinectNav
 
                 coordinateMapper = _sensor.CoordinateMapper;
             }
-
-            else
-            {
-                // Connect to sensor failed
-            }
         }
 
         /// <summary>
